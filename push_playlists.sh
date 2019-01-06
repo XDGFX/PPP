@@ -1,5 +1,6 @@
 # Uses the Plex Playlist API to add your .m3u playlists to your server
-source variables.sh
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $SCRIPTDIR/variables.sh;
 
 for entry in $plex_playlists/* # Gets all playlist paths
 do
