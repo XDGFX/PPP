@@ -1,4 +1,5 @@
-source variables.sh
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $SCRIPTDIR/variables.sh;
 
 cd $plex_playlists && sed -i 's|\\\\server\\Uluru|D:|g' *
 # This many backslashes are needed to 'escape' each initial backslash. The things to change here are:
