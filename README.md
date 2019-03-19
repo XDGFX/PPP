@@ -19,22 +19,36 @@ If you want to delete a playlist or song from a playlist, it must be removed fro
 
 ### Variables
 `server_url` the url of your Plex server, as seen by whatever you're running PPP on [192.168.1.96:32400]
+
 `plex_token` find it here: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/ [P6X4rFdFhcTssbA6pXoT]
+
 `local_playlists` path to the local playlists you want to use, relative to whatever you're running PPP on [/mnt/Playlists]
+
 `install directory` path to your PPP install directory, relative to your PLEX MACHINE (which may be different to the machine you run PPP on) [D:\\Media\\PPP]
+
 `section_id` the library section which contains the music you are adding to playlists (Google will help you find it) [11]
+
 `local_prepend` see below
+
 `plex_prepend` see below
 
 #### EXAMPLE LOCAL_PLAYLIST
+
 > \\uluru\Uluru\Media\Music\Andrew Huang\Love Is Real\Love Is Real.mp3
+
 > \\uluru\Uluru\Media\Music\Ben Howard\Noonday Dream\A Boat To An Island On The Wall.mp3
+
 > \\uluru\Uluru\Media\Music\Bibio\PHANTOM BRICKWORKS\PHANTOM BRICKWORKS.mp3
 
+
 #### EXAMPLE PLEX_PLAYLIST (if exported in m3u format)
+
 > D:\Media\Music\Andrew Huang\Love Is Real\Love Is Real.mp3
+
 > D:\Media\Music\Ben Howard\Noonday Dream\A Boat To An Island On The Wall.mp3
+
 > D:\Media\Music\Bibio\PHANTOM BRICKWORKS\PHANTOM BRICKWORKS.mp3
+
 
 In the examples above, `local_prepend` is *\\\\uluru\\Uluru\\* and `plex_prepend` is *D:\\*
 
