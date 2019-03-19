@@ -18,15 +18,15 @@ If you want to delete a playlist or song from a playlist, it must be removed fro
 4. Save and run the file
 
 ### Variables
-`server_url` the url of your Plex server, as seen by whatever you're running PPP on [192.168.1.96:32400]
+`server_url` the url of your Plex server, as seen by whatever you're running PPP on [e.g. 192.168.1.96:32400]
 
-`plex_token` find it here: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/ [P6X4rFdFhcTssbA6pXoT]
+`plex_token` find it here: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/ [e.g. P6X4rFdFhcTssbA6pXoT]
 
-`local_playlists` path to the local playlists you want to use, relative to whatever you're running PPP on [/mnt/Playlists]
+`local_playlists` path to the local playlists you want to use, relative to whatever you're running PPP on [e.g. /mnt/Playlists]
 
-`install directory` path to your PPP install directory, relative to your PLEX MACHINE (which may be different to the machine you run PPP on) [D:\\Media\\PPP]
+`install directory` path to your PPP install directory, relative to your PLEX MACHINE (which may be different to the machine you run PPP on) [e.g. D:\\Media\\PPP]
 
-`section_id` the library section which contains the music you are adding to playlists (Google will help you find it) [11]
+`section_id` the library section which contains the music you are adding to playlists (Google will help you find it) [e.g. 11]
 
 `local_prepend` see below
 
