@@ -35,18 +35,18 @@ If you want to delete a playlist or song from a playlist, it must be removed fro
 #### EXAMPLE LOCAL_PLAYLIST
 
 > \\uluru\Uluru\Media\Music\Andrew Huang\Love Is Real\Love Is Real.mp3
-
+>
 > \\uluru\Uluru\Media\Music\Ben Howard\Noonday Dream\A Boat To An Island On The Wall.mp3
-
+>
 > \\uluru\Uluru\Media\Music\Bibio\PHANTOM BRICKWORKS\PHANTOM BRICKWORKS.mp3
 
 
 #### EXAMPLE PLEX_PLAYLIST (if exported in m3u format)
 
 > D:\Media\Music\Andrew Huang\Love Is Real\Love Is Real.mp3
-
+>
 > D:\Media\Music\Ben Howard\Noonday Dream\A Boat To An Island On The Wall.mp3
-
+>
 > D:\Media\Music\Bibio\PHANTOM BRICKWORKS\PHANTOM BRICKWORKS.mp3
 
 
