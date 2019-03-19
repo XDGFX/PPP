@@ -1,5 +1,6 @@
-# PPP
+# PPP (Bash version)
 Plex Playlist Pusher
+https://github.com/XDGFX/PPP for Python re-write
 
 Some simple bash scripts used to automatically:
 - take .m3u files from a location (maybe your MusicBee Library)
