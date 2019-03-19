@@ -13,8 +13,8 @@
 server_url = '192.168.1.96:32400'				# The url to your server (may be localhost)
 plex_token = 'P6X4rFdFhcTssbA6pXoT'				# Where do I find this? Here: bit.ly/2p7RtOu
 local_playlists = '/mnt/Playlists'				# Path (relative to the machine you're running this on)
-install_directory = 'D:\\Media\\PPP'			# The path to this PPP folder; as seen by your Plex machine (must be accessible by your Plex machine, but you can run this program on any machine on the network)
-section_id = '11'								# The media section containing all your music (Google 'find Plex section ID')
+install_directory = 'D:\\Media\\PPP'				# The path to this PPP folder; as seen by your Plex machine (must be accessible by your Plex machine, but you can run this program on any machine on the network)
+section_id = '11'						# The media section containing all your music (Google 'find Plex section ID')
 
 # Use only if your local playlists and plex playlists have different directories (e.g. if they are not from the same machine) and so have different paths at the start
 # If your directories include backslashes (they probably will) you need to escape it with a second backslash... 'D:\' becomes 'D:\\'
@@ -36,12 +36,12 @@ print(('I\'ll ignore \"' + local_prepend + '\" from local playlists and \"' + pl
 # Import modules
 from xml.dom import minidom				# for xml
 import urllib.request					# for xml
-from urllib.request import urlopen		# for xml
-import shutil							# for deleting files
-import os								# for folder and file management
-import io								# character encoding
-from collections import OrderedDict		# url ordering
-import requests							# HTTP POST requests
+from urllib.request import urlopen			# for xml
+import shutil						# for deleting files
+import os						# for folder and file management
+import io						# character encoding
+from collections import OrderedDict			# url ordering
+import requests						# HTTP POST requests
 
 if not plex_token:
 	print('ERROR: Hmm... looks like you haven\'t set your variables! Do this by editing getPlaylists.py with a text editor')
