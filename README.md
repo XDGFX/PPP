@@ -24,7 +24,7 @@ If you want to delete a playlist or song from a playlist, it must be removed fro
 
 `local_playlists` path to the local playlists you want to use, relative to whatever you're running PPP on [e.g. /mnt/Playlists]
 
-`install directory` path to your PPP install directory, relative to your PLEX MACHINE (which may be different to the machine you run PPP on) [e.g. D:\\Media\\PPP]
+`install directory` path to your PPP install directory, relative to your PLEX MACHINE (which may be different to the machine you run PPP on) [e.g. D:\\\\Media\\\\PPP]
 
 `section_id` the library section which contains the music you are adding to playlists (Google will help you find it) [e.g. 11]
 
