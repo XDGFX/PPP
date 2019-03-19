@@ -50,7 +50,7 @@ If you want to delete a playlist or song from a playlist, it must be removed fro
 > D:\Media\Music\Bibio\PHANTOM BRICKWORKS\PHANTOM BRICKWORKS.mp3
 
 
-In the examples above, `local_prepend` is *\\\\uluru\\Uluru\\* and `plex_prepend` is *D:\\*
+In the examples above, `local_prepend` is *\\\\\\\\uluru\\\\Uluru\\\\* and `plex_prepend` is *D:\\\\*
 
 **Why are there so many backslashes?**
 You need to double any backslash, because normally it's a special 'escape character' which would break the code. You need to 'escape' the 'escape character' (https://stackoverflow.com/questions/19095796/how-to-print-backslash-with-python)
