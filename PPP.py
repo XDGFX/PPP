@@ -7,6 +7,10 @@
 
 # XDGFX 2019
 
+# 17/03/19 Started working on script
+# 19/03/19 Original V2.0 Release
+# 20/03/19 V2.1 Updated to use tempfile module temporary directory
+
 # Uses GNU General Public License
 
 # VARIABLES GO HERE
@@ -42,51 +46,44 @@ import os						# for folder and file management
 import io						# character encoding
 from collections import OrderedDict			# url ordering
 import requests						# HTTP POST requests
+import tempfile						# for making temporary directories
 
 if not plex_token:
 	print('ERROR: Hmm... looks like you haven\'t set your variables! Do this by editing getPlaylists.py with a text editor')
 	raise SystemExit
 
-if os.path.isdir('tmp/'):
-	try:
-		shutil.rmtree('tmp/')
-	except:
-		print('RIP: I couldn\'t remove tmp folder. Try deleting manually?')
-		raise SystemExit
-
 if not os.path.isdir('local_backups') and not os.path.isfile('NOBACKUPS'):		
 	os.makedirs('local_backups')
-	
-try:
-	os.makedirs('tmp/')
-	os.makedirs('tmp/plex/')
-	os.makedirs('tmp/local/')
-	os.makedirs('tmp/merged/')
-	
-	if not os.path.isfile('NOBACKUPS'):
-		i = 1
-		while os.path.exists('local_backups/%s' % i):
-			i += 1
-		if i > 10:
-			size = sum(os.path.getsize(os.path.join(dirpath,filename)) for dirpath, dirnames, filenames in os.walk('local_backups') for filename in filenames ) / 1024 / 1024
-			print('You have 10+ backups in your install directory, taking up %sMB of space... You might want to remove some old ones.\n' % round(size, 2))
-			print("Alternatively, create an empty file 'NOBACKUPS' in your PPP/ directory")
-	
-		# Backup local playlists
-		try:
-			print('Backing up local playlists...\n')
-			shutil.copytree(local_playlists, 'local_backups/%s' % i)
-			print(('Backed up local playlists to local_backups/%s/\n' % i))
-		except shutil.Error as e:
-			print(('Directory not copied. Error: %s' % e))
-		except OSError as e:
-			print(('Directory not copied. Error: %s' % e))
-	else:
-		print('Not backing up local playlists. If this was NOT intentional, exit the program immediately\n')
 
-except:
-	print('OH NO: Couldn\'t make tmp directories... check your permissions or make sure you don\'t have them open elsewhere')
-	raise SystemExit
+# Make temporary directory
+tmp = tempfile.mkdtemp()
+
+print('Using temporary directory: ' + tmp + '\n')
+
+os.makedirs(tmp + '/plex/')
+os.makedirs(tmp + '/local/')
+os.makedirs(tmp + '/merged/')
+
+if not os.path.isfile('NOBACKUPS'):
+	i = 1
+	while os.path.exists('local_backups/%s' % i):
+		i += 1
+	if i > 10:
+		size = sum(os.path.getsize(os.path.join(dirpath,filename)) for dirpath, dirnames, filenames in os.walk('local_backups') for filename in filenames ) / 1024 / 1024
+		print('You have 10+ backups in your install directory, taking up %sMB of space... You might want to remove some old ones.\n' % round(size, 2))
+		print("Alternatively, create an empty file 'NOBACKUPS' in your PPP/ directory")
+	
+	# Backup local playlists
+	try:
+		print('Backing up local playlists...\n')
+		shutil.copytree(local_playlists, 'local_backups/%s' % i)
+		print(('Backed up local playlists to local_backups/%s/\n' % i))
+	except shutil.Error as e:
+		print(('Directory not copied. Error: %s' % e))
+	except OSError as e:
+		print(('Directory not copied. Error: %s' % e))
+else:
+	print('Not backing up local playlists. If this was NOT intentional, exit the program immediately\n')
 		
 # Get list of playlist IDs
 url = 'http://' + str(server_url) + '/playlists/?X-Plex-Token=' + str(plex_token)
@@ -112,7 +109,7 @@ for item in key:
 	print(('Saving Plex playlist: ' + str(title[0]) + '\n'))
 
 	# Get each track and save to file
-	file = open('tmp/plex/' + str(title[0]) + '.m3u', 'w+')
+	file = open(tmp + '//plex/' + str(title[0]) + '.m3u', 'w+')
 	
 	path = dom.getElementsByTagName('Part')
 	path = [items.attributes['file'].value for items in path] # Extract disk path to music file
@@ -129,46 +126,46 @@ for root, dirs, files in os.walk(local_playlists):
 	
 		if file.endswith('.m3u'):
 			print(('Copying local playlist: ' + file_path))
-			shutil.copy2(file_path, 'tmp/local/')
+			shutil.copy2(file_path, tmp + '//local/')
 			
 # Checks for unique playlists to tmp/plex/, and copies them to tmp/merged/
-for filename in os.listdir('tmp/plex/'):
-	if not os.path.isfile(os.path.join('tmp/local/', filename)):
+for filename in os.listdir(tmp + '//plex/'):
+	if not os.path.isfile(os.path.join(tmp + '//local/', filename)):
 		print(('Found new Plex playlist: ' + filename))
-		plex_tracks = open(os.path.join('tmp/plex/', filename), 'r').read().splitlines()
-		os.remove(os.path.join('tmp/plex/', filename))
-		file = open('tmp/merged/' + filename, 'w+')
+		plex_tracks = open(os.path.join(tmp + '/plex/', filename), 'r').read().splitlines()
+		os.remove(os.path.join(tmp + '/plex/', filename))
+		file = open(tmp + '/merged/' + filename, 'w+')
 		for i in range(len(plex_tracks)):
 			plex_tracks[i] = plex_tracks[i].strip(plex_prepend) # Strips plex_prepend
 			file.write(plex_tracks[i] + '\n')
 
 # Checks for unique playlists to tmp/local/, and copies them to tmp/merged/
-for filename in os.listdir('tmp/local/'):
-	if not os.path.isfile(os.path.join('tmp/plex/', filename)):
+for filename in os.listdir(tmp + '/local/'):
+	if not os.path.isfile(os.path.join(tmp + '/plex/', filename)):
 		print(('Found new local playlist: ' + filename))
-		local_tracks = open(os.path.join('tmp/local/', filename), 'r').read().splitlines()
-		os.remove(os.path.join('tmp/local/', filename))
-		file = open('tmp/merged/' + filename, 'w+')
+		local_tracks = open(os.path.join(tmp + '/local/', filename), 'r').read().splitlines()
+		os.remove(os.path.join(tmp + '/local/', filename))
+		file = open(tmp + '/merged/' + filename, 'w+')
 		for i in range(len(local_tracks)):
 			local_tracks[i] = local_tracks[i].strip(local_prepend) # Strips local_prepend
 			file.write(local_tracks[i] + '\n')
 
 # Merges playlists from tmp/local/ and tmp/plex/ and puts the output in tmp/merged			
-for filename in os.listdir('tmp/local/'):
+for filename in os.listdir(tmp + '/local/'):
 	
 	print(('Merging: ' + filename))
 
-	local_tracks = open(os.path.join('tmp/local/', filename), 'r').read().splitlines()
+	local_tracks = open(os.path.join(tmp + '/local/', filename), 'r').read().splitlines()
 
 	for i in range(len(local_tracks)): # Strips local_prepend
 		local_tracks[i] = local_tracks[i].strip(local_prepend)
 
-	plex_tracks = open(os.path.join('tmp/plex/', filename), 'r').read().splitlines()
+	plex_tracks = open(os.path.join(tmp + '/plex/', filename), 'r').read().splitlines()
 
 	for i in range(len(plex_tracks)): # Strips plex_prepend
 		plex_tracks[i] = plex_tracks[i].strip(plex_prepend)
 
-	file = io.open(os.path.join('tmp/merged/', filename), 'w+', encoding='utf8')
+	file = io.open(os.path.join(tmp + '/merged/', filename), 'w+', encoding='utf8')
 	
 	for line in local_tracks: # Writes local_tracks to merged playlist
 		
@@ -181,8 +178,8 @@ for filename in os.listdir('tmp/local/'):
 		file.write(line + '\n')
 		
 # Copy merged playlists back into tmp/plex/ and tmp/local/ with prepends re-added
-for filename in os.listdir('tmp/merged/'):
-	new_tracks = open(os.path.join('tmp/merged/', filename), 'r+').read().splitlines()
+for filename in os.listdir(tmp + '/merged/'):
+	new_tracks = open(os.path.join(tmp + '/merged/', filename), 'r+').read().splitlines()
 	plex_tracks = []
 	local_tracks = []
 	
@@ -190,12 +187,12 @@ for filename in os.listdir('tmp/merged/'):
 		plex_tracks.append(plex_prepend + new_tracks[i])
 		local_tracks.append(local_prepend + new_tracks[i])
 
-	file = io.open(os.path.join('tmp/local/', filename), 'w+', encoding='utf8')
+	file = io.open(os.path.join(tmp + '/local/', filename), 'w+', encoding='utf8')
 		
 	for line in local_tracks: # Writes local_tracks to merged playlist
 		file.write(line + '\n')
 	
-	file = io.open(os.path.join('tmp/plex/', filename), 'w+', encoding='utf8')
+	file = io.open(os.path.join(tmp + '/plex/', filename), 'w+', encoding='utf8')
 		
 	for line in plex_tracks: # Writes local_tracks to merged playlist
 		file.write(line + '\n')
@@ -204,7 +201,7 @@ for filename in os.listdir('tmp/merged/'):
 url = 'http://' + server_url + '/playlists/upload'
 headers = {'cache-control': "no-cache"}
 
-for filename in os.listdir('tmp/plex/'):
+for filename in os.listdir(tmp + '/plex/'):
 	print('Sending updated playlist to Plex: ' + filename)
 	
 	current_playlist = install_directory + '\\tmp\\plex\\' + filename
@@ -219,18 +216,18 @@ for root, dirs, files in os.walk(local_playlists):
 		if file.endswith('.m3u'):
 			print('Copying updated playlist to local playlists: ' + file)
 			file_path = os.path.join(root, file)
-			if os.path.isfile('tmp/local/' + file):
-				shutil.copy2('tmp/local/' + file, file_path)
-				os.remove('tmp/local/' + file)
+			if os.path.isfile(tmp + '/local/' + file):
+				shutil.copy2(tmp + '/local/' + file, file_path)
+				os.remove(tmp + '/local/' + file)
 			else:
 				print('FAIL: A playlist from local_playlists was there earlier and now it isn\'t. I am very confused.')
 				raise SystemExit
 
-for filename in os.listdir('tmp/local/'):
-	shutil.copy2('tmp/local' + file, local_playlists)
+for filename in os.listdir(tmp + '/local/'):
+	shutil.copy2(tmp + '/local' + file, local_playlists)
 	
 try:
-	shutil.rmtree('tmp/')
+	shutil.rmtree(tmp + '/')
 	print('Complete!\n')
 except:
 	print('Program complete, but I had trouble cleaning tmp/ directory. Check it\'s not open somewhere else')
