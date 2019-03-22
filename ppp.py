@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-## PPP (Plex Playlist Pusher) V2.0
+## PPP (Plex Playlist Pusher) V2.1.1
 # Synchronises playlists between local files (.m3u) and Plex playlists.
 # If there are differences between local and Plex playlists, both will be merged and duplicates deleted; meaning tracks
 # can be added on one and updated on both... but must be deleted on BOTH to remove completely (the same goes for new playlists).
@@ -10,21 +10,22 @@
 # 17/03/19 Started working on script
 # 19/03/19 Original V2.0 Release
 # 20/03/19 V2.1 Updated to use tempfile module temporary directory
+# 22/03/19 V2.1.1 General improvements and bug fixes
 
 # Uses GNU General Public License
 
 # VARIABLES GO HERE
-server_url = '127.0.0.1:32400'									# The url to your server (may be localhost)
-plex_token = 'YourTokenHere'										# Where do I find this? Here: bit.ly/2p7RtOu
-local_playlists = '/media/MusicShare/Playlist'	# Path (relative to the machine you're running this on)
-install_directory = '/media/MusicShare/PPP'			# The path to this PPP folder; as seen by your Plex machine (must be accessible by your Plex machine, but you can run this program on any machine on the network)
-section_id = '3'						                    # The media section containing all your music (Google 'find Plex section ID')
+server_url = '192.168.1.96:32400'				# The url to your server (may be localhost)
+plex_token = 'P6X4rFdFhcTssbA6pXoT'				# Where do I find this? Here: bit.ly/2p7RtOu
+local_playlists = '/mnt/Playlists'				# Path (relative to the machine you're running this on)
+install_directory = 'D:\\Media\\PPP'				# The path to this PPP folder; as seen by your Plex machine (must be accessible by your Plex machine, but you can run this program on any machine on the network)
+section_id = '11'						# The media section containing all your music (Google 'find Plex section ID')
 
 # Use only if your local playlists and plex playlists have different directories (e.g. if they are not from the same machine) and so have different paths at the start
 # If your directories include backslashes (they probably will) you need to escape it with a second backslash... 'D:\' becomes 'D:\\'
 # Leave blank ('') if your directories are the same
-local_prepend = '/media-player/'
-plex_prepend = '/media-server/'
+local_prepend = '\\\\uluru\\Uluru\\'
+plex_prepend = 'D:\\'
 
 # NOTES: If you have used the Plex Playlist PUSH api in the past, existing playlists will be duplicated when running this program.
 #        This is because the playlist .m3u files are located in a different place. Delete the old playlists from Plex and run PPP again.
@@ -38,15 +39,15 @@ print("\nPPP Copyright (C) 2019 XDGFX \nThis program comes with ABSOLUTELY NO WA
 print(('I\'ll ignore \"' + local_prepend + '\" from local playlists and \"' + plex_prepend + '\" from Plex playlists\n'))
 
 # Import modules
-from xml.dom import minidom						# for xml
-import urllib.request									# for xml
+from xml.dom import minidom			# for xml
+import urllib.request				# for xml
 from urllib.request import urlopen		# for xml
-import shutil													# for deleting files
-import os															# for folder and file management
-import io															# character encoding
+import shutil					# for deleting files
+import os					# for folder and file management
+import io					# character encoding
 from collections import OrderedDict		# url ordering
-import requests												# HTTP POST requests
-import tempfile												# for making temporary directories
+import requests					# HTTP POST requests
+import tempfile					# for making temporary directories
 
 if not plex_token:
 	print('ERROR: Hmm... looks like you haven\'t set your variables! Do this by editing getPlaylists.py with a text editor')
@@ -55,12 +56,12 @@ if not plex_token:
 if not os.path.isdir('local_backups') and not os.path.isfile('NOBACKUPS'):		
 	os.makedirs('local_backups')
 
-# Inital clean-up if closed prematurely on previous run  ### Added >>>>
+# Inital clean-up if closed prematurely on previous run
 if os.path.exists(install_directory + '/plex/'):
 	try:
 		shutil.rmtree(install_directory + '/plex/')
 	except shutil.Error as e:
-		print(('Directory not removed. Error: %s' % e)) ### <<<<
+		print(('Directory not removed. Error: %s' % e))
 
 # Make temporary directory
 tmp = tempfile.mkdtemp()
@@ -116,7 +117,7 @@ for item in key:
 	print(('Saving Plex playlist: ' + str(title[0]) + '\n'))
 
 	# Get each track and save to file
-	file = open(tmp + '/plex/' + str(title[0]) + '.m3u', 'w+') ### removed leading / from folder name
+	file = open(tmp + '/plex/' + str(title[0]) + '.m3u', 'w+')
 	
 	path = dom.getElementsByTagName('Part')
 	path = [items.attributes['file'].value for items in path] # Extract disk path to music file
@@ -133,11 +134,11 @@ for root, dirs, files in os.walk(local_playlists):
 	
 		if file.endswith('.m3u'):
 			print(('Copying local playlist: ' + file_path))
-			shutil.copy2(file_path, tmp + '/local/') ### removed leading / from folder name
+			shutil.copy2(file_path, tmp + '/local/')
 			
 # Checks for unique playlists to tmp/plex/, and copies them to tmp/merged/
-for filename in os.listdir(tmp + '/plex/'): ### removed leading / from folder name
-	if not os.path.isfile(os.path.join(tmp + '/local/', filename)): ### removed leading / from folder name from folder name
+for filename in os.listdir(tmp + '/plex/'):
+	if not os.path.isfile(os.path.join(tmp + '/local/', filename)):
 		print(('Found new Plex playlist: ' + filename))
 		plex_tracks = open(os.path.join(tmp + '/plex/', filename), 'r').read().splitlines()
 		os.remove(os.path.join(tmp + '/plex/', filename))
@@ -153,11 +154,13 @@ for filename in os.listdir(tmp + '/local/'):
 		local_tracks = open(os.path.join(tmp + '/local/', filename), 'r').read().splitlines()
 		os.remove(os.path.join(tmp + '/local/', filename))
 		file = open(tmp + '/merged/' + filename, 'w+')
+		
 		for i in range(len(local_tracks)):
-			if not local_tracks[i].startswith('#'): # skipping m3u tags beginning with # ### Added
+			if not local_tracks[i].startswith('#'): # Skips m3u tags beginning with #
 				local_tracks[i] = local_tracks[i].strip(local_prepend) # Strips local_prepend
 				file.write(local_tracks[i] + '\n')
-		file.close() ### Added file close
+				
+		file.close()
 
 # Merges playlists from tmp/local/ and tmp/plex/ and puts the output in tmp/merged			
 for filename in os.listdir(tmp + '/local/'):
@@ -177,16 +180,16 @@ for filename in os.listdir(tmp + '/local/'):
 	file = io.open(os.path.join(tmp + '/merged/', filename), 'w+', encoding='utf8')
 
 	for line in local_tracks: # Writes local_tracks to merged playlist
-		if not line.startswith('#'): # skipping m3u tags beginning with # ### Added
+		if not line.startswith('#'): # Skips m3u tags beginning with #
 			file.write(line + '\n')
-			file.close() ### Added file close
+			file.close()
 
 		if line in plex_tracks: # Remove duplicates
 			plex_tracks.remove(line)
 		
 	for line in plex_tracks: # Writes plex_tracks to merged playlist
 		file.write(line + '\n')
-	file.close() ### Added file close
+	file.close()
 
 # Copy merged playlists back into tmp/plex/ and tmp/local/ with prepends re-added
 for filename in os.listdir(tmp + '/merged/'):
@@ -208,23 +211,23 @@ for filename in os.listdir(tmp + '/merged/'):
 
 	for line in plex_tracks: # Writes local_tracks to merged playlist
 		file.write(line + '\n')
-	file.close() ### Added file close
+	file.close()
 
 # POST new playlists to Plex
-url = 'http://' + server_url + '/playlists/upload?' ### added trailing ?
+url = 'http://' + server_url + '/playlists/upload?'
 headers = {'cache-control': "no-cache"}
 
-shutil.copytree(tmp + '/plex/', install_directory + '/plex/') ### tmp folder not accessable by POST, moved plex playlist files to install dir for copy
-for filename in os.listdir(install_directory + '/plex/'): ### changed to a folder accessable by POST
+shutil.copytree(tmp + '/plex/', install_directory + '/plex/')
+for filename in os.listdir(install_directory + '/plex/'):
 	print('Sending updated playlist to Plex: ' + filename)
 
-	current_playlist = (install_directory + '/plex/' + filename) ### changed to a folder accessable by POST
+	current_playlist = (install_directory + '/plex/' + filename)
 
-	if not os.path.isfile(current_playlist): ### some error checking added
-		print('The file ' + current_playlist + ' is lost') ### some error checking added
+	if not os.path.isfile(current_playlist):
+		print('The file ' + current_playlist + ' is lost')
 
 	querystring = urllib.parse.urlencode(OrderedDict([("sectionID", section_id), ("path", current_playlist), ("X-Plex-Token", plex_token)]))
-	response = requests.post(url, headers = headers, params=querystring) ### changed to requests.post
+	response = requests.post(url, headers = headers, params=querystring)
 	print(response.text) # Should return nothing but if there's an issue there may be an error shown
 	
 # Copy updated local playlists back to local_playlists
@@ -245,8 +248,8 @@ for filename in os.listdir(tmp + '/local/'):
 	
 try:
 	shutil.rmtree(tmp + '/')
-	shutil.rmtree(install_directory + '/plex/') ### added to clean up the plex upload folder
+	shutil.rmtree(install_directory + '/plex/')
 	print('Complete!\n')
 except shutil.Error as e:
-	print(('Directory not removed. Error: %s' % e)) ### change to include error msg
+	print(('Directory not removed. Error: %s' % e))
 	raise SystemExit
