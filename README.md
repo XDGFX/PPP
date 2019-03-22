@@ -2,7 +2,7 @@
 Plex Playlist Pusher (Python Re-write)
 
 A simple Python 3 script used to automatically:
-- load .m3u playlists from a local directory (maybe your MusicBee library)
+- load .m3u playlists from a local directory (maybe your MusicBee library... **Can't be the same directory as your PPP installation!**)
 - load music playlists from Plex
 - compare the two, merging any new tracks or entire playlists
 - push the updated playlists back to Plex using the Plex Playlist API (https://forums.plex.tv/t/can-plexamp-read-and-use-m3u-playlists/234179/21)
