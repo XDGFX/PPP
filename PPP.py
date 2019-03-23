@@ -13,8 +13,8 @@
 server_url = '192.168.1.96:32400'				# The url to your server (may be localhost)
 plex_token = 'P6X4rFdFhcTssbA6pXoT'				# Where do I find this? Here: bit.ly/2p7RtOu
 local_playlists = '/mnt/Playlists'				# Path (relative to the machine you're running this on)
-install_directory = 'D:\\Media\\PPP'			# The path to this PPP folder; as seen by your Plex machine (must be accessible by your Plex machine, but you can run this program on any machine on the network)
-section_id = '11'								# The media section containing all your music (Google 'find Plex section ID')
+install_directory = 'D:\\Media\\PPP'				# The path to this PPP folder; as seen by your Plex machine (must be accessible by your Plex machine, but you can run this program on any machine on the network)
+section_id = '11'						# The media section containing all your music (Google 'find Plex section ID')
 
 # Use only if your local playlists and plex playlists have different directories (e.g. if they are not from the same machine) and so have different paths at the start
 # If your directories include backslashes (they probably will) you need to escape it with a second backslash... 'D:\' becomes 'D:\\'
@@ -34,14 +34,14 @@ print("\nPPP Copyright (C) 2019 XDGFX \nThis program comes with ABSOLUTELY NO WA
 print(('I\'ll ignore \"' + local_prepend + '\" from local playlists and \"' + plex_prepend + '\" from Plex playlists\n'))
 
 # Import modules
-from xml.dom import minidom				# for xml
-import urllib.request					# for xml
+from xml.dom import minidom			# for xml
+import urllib.request				# for xml
 from urllib.request import urlopen		# for xml
-import shutil							# for deleting files
-import os								# for folder and file management
-import io								# character encoding
+import shutil					# for deleting files
+import os					# for folder and file management
+import io					# character encoding
 from collections import OrderedDict		# url ordering
-import requests							# HTTP POST requests
+import requests					# HTTP POST requests
 
 if not plex_token:
 	print('ERROR: Hmm... looks like you haven\'t set your variables! Do this by editing getPlaylists.py with a text editor')
@@ -150,8 +150,10 @@ for filename in os.listdir('tmp/local/'):
 		os.remove(os.path.join('tmp/local/', filename))
 		file = open('tmp/merged/' + filename, 'w+')
 		for i in range(len(local_tracks)):
-			local_tracks[i] = local_tracks[i].strip(local_prepend) # Strips local_prepend
-			file.write(local_tracks[i] + '\n')
+			if not local_tracks[i].startswith('#'): #Skips m3u tags beginning with #
+				local_tracks[i] = local_tracks[i].strip(local_prepend) # Strips local_prepend
+				file.write(local_tracks[i] + '\n')
+		file.close()
 
 # Merges playlists from tmp/local/ and tmp/plex/ and puts the output in tmp/merged			
 for filename in os.listdir('tmp/local/'):
@@ -172,13 +174,16 @@ for filename in os.listdir('tmp/local/'):
 	
 	for line in local_tracks: # Writes local_tracks to merged playlist
 		
-		file.write(line + '\n')
+		if not line.startswith('#'): # Skips m3u tags beginning with #
+			file.write(line + '\n')
 	
 		if line in plex_tracks: # Remove duplicates
 			plex_tracks.remove(line)
 		
 	for line in plex_tracks: # Writes plex_tracks to merged playlist
 		file.write(line + '\n')
+		
+	file.close()
 		
 # Copy merged playlists back into tmp/plex/ and tmp/local/ with prepends re-added
 for filename in os.listdir('tmp/merged/'):
@@ -194,14 +199,18 @@ for filename in os.listdir('tmp/merged/'):
 		
 	for line in local_tracks: # Writes local_tracks to merged playlist
 		file.write(line + '\n')
-	
+
+	file.close()
+		
 	file = io.open(os.path.join('tmp/plex/', filename), 'w+', encoding='utf8')
 		
 	for line in plex_tracks: # Writes local_tracks to merged playlist
 		file.write(line + '\n')
+		
+	file.close()
 			
 # POST new playlists to Plex
-url = 'http://' + server_url + '/playlists/upload'
+url = 'http://' + server_url + '/playlists/upload?'
 headers = {'cache-control': "no-cache"}
 
 for filename in os.listdir('tmp/plex/'):
@@ -209,8 +218,11 @@ for filename in os.listdir('tmp/plex/'):
 	
 	current_playlist = install_directory + '\\tmp\\plex\\' + filename
 	
+	if not os.path.isfile(current_playlist):
+		print('The file: ' + current_playlist + ' has been lost...')
+	
 	querystring = urllib.parse.urlencode(OrderedDict([("sectionID", section_id), ("path", current_playlist), ("X-Plex-Token", plex_token)]))
-	response = requests.request("POST", url, data = "", headers = headers, params = querystring)
+	response = requests.post(url, data = "", headers = headers, params = querystring)
 	print(response.text) # Should return nothing but if there's an issue there may be an error shown
 	
 # Copy updated local playlists back to local_playlists
@@ -232,6 +244,6 @@ for filename in os.listdir('tmp/local/'):
 try:
 	shutil.rmtree('tmp/')
 	print('Complete!\n')
-except:
-	print('Program complete, but I had trouble cleaning tmp/ directory. Check it\'s not open somewhere else')
+except shutil.Error as e:
+	print('Program complete, but I had trouble cleaning tmp/ directory. Check it\'s not open somewhere else \n Error: %s' % e)
 	raise SystemExit
