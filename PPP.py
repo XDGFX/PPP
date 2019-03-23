@@ -1,11 +1,17 @@
 #!/usr/bin/python3
 
-## PPP (Plex Playlist Pusher) V2.0
+## PPP (Plex Playlist Pusher) v2.1.2
 # Synchronises playlists between local files (.m3u) and Plex playlists.
 # If there are differences between local and Plex playlists, both will be merged and duplicates deleted; meaning tracks
 # can be added on one and updated on both... but must be deleted on BOTH to remove completely (the same goes for new playlists).
 
 # XDGFX 2019
+
+# 17/03/19 Started working on script
+# 19/03/19 Original v2.0 Release
+# 20/03/19 v2.1 Updated to use tempfile module temporary directory
+# 22/03/19 v2.1.1 General improvements and bug fixes
+# 23/03/19 v2.1.2 Fixed v2.1 and v2.1.1 releases, no longer using tempfile
 
 # Uses GNU General Public License
 
