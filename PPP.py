@@ -218,9 +218,6 @@ for filename in os.listdir('tmp/plex/'):
 	
 	current_playlist = install_directory + '\\tmp\\plex\\' + filename
 	
-	if not os.path.isfile(current_playlist):
-		print('The file: ' + current_playlist + ' has been lost...')
-	
 	querystring = urllib.parse.urlencode(OrderedDict([("sectionID", section_id), ("path", current_playlist), ("X-Plex-Token", plex_token)]))
 	response = requests.post(url, data = "", headers = headers, params = querystring)
 	print(response.text) # Should return nothing but if there's an issue there may be an error shown
@@ -239,7 +236,7 @@ for root, dirs, files in os.walk(local_playlists):
 				raise SystemExit
 
 for filename in os.listdir('tmp/local/'):
-	shutil.copy2('tmp/local' + file, local_playlists)
+	shutil.copy2('tmp/local/' + filename, local_playlists)
 	
 try:
 	shutil.rmtree('tmp/')
