@@ -48,6 +48,7 @@ import os					# for folder and file management
 import io					# character encoding
 from collections import OrderedDict		# url ordering
 import requests					# HTTP POST requests
+import codecs
 
 if not plex_token:
 	print('ERROR: Hmm... looks like you haven\'t set your variables! Do this by editing getPlaylists.py with a text editor')
@@ -118,7 +119,7 @@ for item in key:
 	print(('Saving Plex playlist: ' + str(title[0]) + '\n'))
 
 	# Get each track and save to file
-	file = open('tmp/plex/' + str(title[0]) + '.m3u', 'w+')
+	file = codecs.open('tmp/plex/' + str(title[0]) + '.m3u', 'w+', 'utf-8')
 	
 	path = dom.getElementsByTagName('Part')
 	path = [items.attributes['file'].value for items in path] # Extract disk path to music file
@@ -141,9 +142,9 @@ for root, dirs, files in os.walk(local_playlists):
 for filename in os.listdir('tmp/plex/'):
 	if not os.path.isfile(os.path.join('tmp/local/', filename)):
 		print(('Found new Plex playlist: ' + filename))
-		plex_tracks = open(os.path.join('tmp/plex/', filename), 'r').read().splitlines()
+		plex_tracks = codecs.open(os.path.join('tmp/plex/', filename), 'r', 'utf-8').read().splitlines()
 		os.remove(os.path.join('tmp/plex/', filename))
-		file = open('tmp/merged/' + filename, 'w+')
+		file = codecs.open('tmp/merged/' + filename, 'w+', 'utf-8')
 		for i in range(len(plex_tracks)):
 			plex_tracks[i] = plex_tracks[i].strip(plex_prepend) # Strips plex_prepend
 			file.write(plex_tracks[i] + '\n')
@@ -152,9 +153,9 @@ for filename in os.listdir('tmp/plex/'):
 for filename in os.listdir('tmp/local/'):
 	if not os.path.isfile(os.path.join('tmp/plex/', filename)):
 		print(('Found new local playlist: ' + filename))
-		local_tracks = open(os.path.join('tmp/local/', filename), 'r').read().splitlines()
+		local_tracks = codecs.open(os.path.join('tmp/local/', filename), 'r', 'utf-8').read().splitlines()
 		os.remove(os.path.join('tmp/local/', filename))
-		file = open('tmp/merged/' + filename, 'w+')
+		file = codecs.open('tmp/merged/' + filename, 'w+', 'utf-8')
 		for i in range(len(local_tracks)):
 			if not local_tracks[i].startswith('#'): #Skips m3u tags beginning with #
 				local_tracks[i] = local_tracks[i].strip(local_prepend) # Strips local_prepend
@@ -166,12 +167,12 @@ for filename in os.listdir('tmp/local/'):
 	
 	print(('Merging: ' + filename))
 
-	local_tracks = open(os.path.join('tmp/local/', filename), 'r').read().splitlines()
+	local_tracks = codecs.open(os.path.join('tmp/local/', filename), 'r', 'utf-8').read().splitlines()
 
 	for i in range(len(local_tracks)): # Strips local_prepend
 		local_tracks[i] = local_tracks[i].strip(local_prepend)
 
-	plex_tracks = open(os.path.join('tmp/plex/', filename), 'r').read().splitlines()
+	plex_tracks = codecs.open(os.path.join('tmp/plex/', filename), 'r', 'utf-8').read().splitlines()
 
 	for i in range(len(plex_tracks)): # Strips plex_prepend
 		plex_tracks[i] = plex_tracks[i].strip(plex_prepend)
@@ -193,7 +194,7 @@ for filename in os.listdir('tmp/local/'):
 		
 # Copy merged playlists back into tmp/plex/ and tmp/local/ with prepends re-added
 for filename in os.listdir('tmp/merged/'):
-	new_tracks = open(os.path.join('tmp/merged/', filename), 'r+').read().splitlines()
+	new_tracks = codecs.open(os.path.join('tmp/merged/', filename), 'r+', 'utf-8').read().splitlines()
 	plex_tracks = []
 	local_tracks = []
 	
