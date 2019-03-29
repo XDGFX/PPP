@@ -1,6 +1,8 @@
 # PPP
 Plex Playlist Pusher (Python Re-write)
 
+*Looking for the original Bash version? Find it [here](https://github.com/XDGFX/PPP/tree/master)*
+
 A simple Python 3 script used to automatically:
 - load .m3u playlists from a local directory (maybe your MusicBee library... **Can't be the same directory as your PPP installation!**)
 - load music playlists from Plex
