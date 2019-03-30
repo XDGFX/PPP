@@ -56,3 +56,10 @@ In the examples above, `local_prepend` is *\\\\\\\\uluru\\\\Uluru\\\\* and `plex
 
 **Why are there so many backslashes?**
 You need to double any backslash, because normally it's a special 'escape character' which would break the code. You need to 'escape' the 'escape character' (https://stackoverflow.com/questions/19095796/how-to-print-backslash-with-python)
+
+**Want to run this automatically every X amount of time?**
+Use [crontab](https://www.raspberrypi.org/documentation/linux/usage/cron.md). You may need to apply [this fix](https://www.digitalocean.com/community/questions/unable-to-execute-a-python-script-via-crontab-but-can-execute-it-manually-what-gives).
+
+Example crontab:
+
+`* * * * * cd /path/to/PPP && /usr/bin/python3 /path/to/PPP/PPP.py >> /path/to/PPP/PPP.log`
