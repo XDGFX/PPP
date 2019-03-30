@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-## PPP (Plex Playlist Pusher) v2.1.2
+## PPP (Plex Playlist Pusher) v2.1.3
 # Synchronises playlists between local files (.m3u) and Plex playlists.
 # If there are differences between local and Plex playlists, both will be merged and duplicates deleted; meaning tracks
 # can be added on one and updated on both... but must be deleted on BOTH to remove completely (the same goes for new playlists).
@@ -12,6 +12,7 @@
 # 20/03/19 v2.1 Updated to use tempfile module temporary directory
 # 22/03/19 v2.1.1 General improvements and bug fixes
 # 23/03/19 v2.1.2 Fixed v2.1 and v2.1.1 releases, no longer using tempfile
+# 30/03/19 v2.1.3 Added timestamp and improved character support
 
 # Uses GNU General Public License
 
@@ -50,7 +51,7 @@ from collections import OrderedDict		# url ordering
 import requests					# HTTP POST requests
 from datetime import datetime			# for timestamp
 
-print('Running PPP at ' + str(datetime.now().replace(microsecond=0)))
+print('Running PPP at ' + str(datetime.now().replace(microsecond=0)) + '\n')
 
 if not plex_token:
 	print('ERROR: Hmm... looks like you haven\'t set your variables! Do this by editing getPlaylists.py with a text editor')
