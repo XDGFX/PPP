@@ -48,6 +48,9 @@ import os					# for folder and file management
 import io					# character encoding
 from collections import OrderedDict		# url ordering
 import requests					# HTTP POST requests
+from datetime import datetime			# for timestamp
+
+print('Running PPP at ' + str(datetime.now().replace(microsecond=0)))
 
 if not plex_token:
 	print('ERROR: Hmm... looks like you haven\'t set your variables! Do this by editing getPlaylists.py with a text editor')
