@@ -62,4 +62,4 @@ Use [crontab](https://www.raspberrypi.org/documentation/linux/usage/cron.md). Yo
 
 Example crontab:
 
-`* * * * * cd /path/to/PPP && /usr/bin/python3 /path/to/PPP/PPP.py >> /path/to/PPP/PPP.log`
+`* * * * * cd /path/to/PPP && /usr/bin/python3 /path/to/PPP/PPP.py >> /path/to/PPP/PPP.log 2>&1`
