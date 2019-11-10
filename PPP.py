@@ -226,7 +226,7 @@ headers = {'cache-control': "no-cache"}
 for filename in os.listdir('tmp/plex/'):
 	print('Sending updated playlist to Plex: ' + filename)
 	
-	current_playlist = install_directory + '\\tmp\\plex\\' + filename
+	current_playlist = os.path.join(install_directory, 'tmp', 'plex', filename)
 	
 	querystring = urllib.parse.urlencode(OrderedDict([("sectionID", section_id), ("path", current_playlist), ("X-Plex-Token", plex_token)]))
 	response = requests.post(url, data = "", headers = headers, params = querystring)
