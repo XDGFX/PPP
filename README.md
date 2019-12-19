@@ -15,9 +15,9 @@ If you want to delete a playlist or song from a playlist, it must be removed fro
 
 ### Usage instructions
 1. Install Python 3.X if you haven't already
-2. Open PPP.py with a text editor
-3. Change the below variables to suit your use case
-4. Save and run the file
+2. Download the latest version of PPP from [here](https://github.com/XDGFX/PPP/releases) (note: don't clone directly as files may be WIP!)
+3. Edit variables.py to suit your use case
+4. Run PPP
 
 ### Variables
 `server_url` the url of your Plex server, as seen by whatever you're running PPP on [e.g. 192.168.1.96:32400]
