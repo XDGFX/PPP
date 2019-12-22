@@ -637,7 +637,7 @@ for filename in os.listdir(_plex):
     response = requests.post(url, data="", headers=headers, params=querystring)
 
     # Should return nothing but if there's an issue there may be an error shown
-    print(response.text)
+    #print(response.text)
 
 br()
 
