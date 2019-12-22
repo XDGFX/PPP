@@ -55,8 +55,9 @@ Use task scheduler? I haven't tested it.
 
 ## Variables (Reference)
 Running setup should help you find all these variables!
+
 | VARIABLE | DESCRIPTION | EXAMPLE |
-| --- | --- | --- |
+|---|---|---|
 | `server_url` | the url of your Plex server, as seen by whatever you're running PPP on | `"http://192.168.1.100:32400"` |
 | `"plex_token"` | find it [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/) | `"A1B3c4bdHA3s8COTaE3l"` |
 | `local_playlists` | path to the local playlists you want to use, relative to PPP | `"/mnt/Playlists"` |
