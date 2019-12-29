@@ -175,13 +175,13 @@ def setupVariables():
 
     # Regex to check token
     if re.compile("^[A-Za-z1-9]+$").match(plex_token) is None:
-        input("WARNING: Entered token '" + server_url + "' does not appear to follow the correct format!\n" +
+        input("WARNING: Entered token '" + plex_token + "' does not appear to follow the correct format!\n" +
               "If you believe this is a mistake, press enter to continue... ")
 
         br()
     
     # Decide if SSL cert should be enforced
-    check_ssl = input("Check for correct SSL certificate?: (default True)")
+    check_ssl = input("Check for correct SSL certificate? (default True): ")
     
     if (check_ssl == "False"):
         check_ssl = False;
@@ -297,7 +297,10 @@ def setupVariables():
 
     v = {}
     v["server_url"] = server_url
-    v["check_ssl"] = check_ssl
+    if (check_ssl == False):
+        v["check_ssl"] = "False"
+    else:
+        v["check_ssl"] = "True"
     v["plex_token"] = plex_token
     v["local_playlists"] = local_playlists
     v["install_directory"] = install_directory
