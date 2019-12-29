@@ -181,9 +181,9 @@ def setupVariables():
         br()
     
     # Decide if SSL cert should be enforced
-    check_ssl = input("Check for correct SSL certificate? (default True): ")
+    check_ssl = input("Validate SSL certificate? - enabled by default (y or n): ")
     
-    if (check_ssl == "False"):
+    if (check_ssl == "n" or check_ssl == "N"):
         check_ssl = False;
         warnings.filterwarnings('ignore', message='Unverified HTTPS request')
     else:
