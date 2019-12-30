@@ -31,6 +31,7 @@ from xml.etree import ElementTree            # for xml
 import urllib                                # for Plex POST
 import re                                    # for verifying input variables
 import json                                  # for saving of variables
+import warnings                              # for hiding SSL warnings when cert checking is disabled
 
 
 # --- FUNCTIONS ---
@@ -39,12 +40,12 @@ def br():
     print("\n------\n")
 
 
-def plexSections(server_url, plex_token):
+def plexSections(server_url, plex_token, check_ssl):
     try:
         print("Requesting section info from Plex...")
         url = server_url + "/library/sections/all?X-Plex-Token=" + plex_token
         print("URL: " + url.replace(plex_token, "***********"))
-        resp = requests.get(url, timeout=30)
+        resp = requests.get(url, timeout=30, verify=check_ssl)
 
         if resp.status_code == 200:
             print("Requesting of section info was successful.")
@@ -64,12 +65,12 @@ def plexSections(server_url, plex_token):
         raise SystemExit
 
 
-def plexPlaylistKeys(server_url, plex_token):
+def plexPlaylistKeys(server_url, plex_token, check_ssl):
     try:
         print("Requesting playlists from Plex...")
         url = server_url + "/playlists/?X-Plex-Token=" + plex_token
         print("URL: " + url.replace(plex_token, "***********"))
-        resp = requests.get(url, timeout=30)
+        resp = requests.get(url, timeout=30, verify=check_ssl)
 
         if resp.status_code == 200:
             print("Requesting of playlists was successful.")
@@ -92,12 +93,12 @@ def plexPlaylistKeys(server_url, plex_token):
         raise SystemExit
 
 
-def plexPlaylist(server_url, plex_token, key):
+def plexPlaylist(server_url, plex_token, key, check_ssl):
     try:
         print("Requesting playlist data from Plex...")
         url = server_url + key + "?X-Plex-Token=" + plex_token
         print("URL: " + url.replace(plex_token, "***********"))
-        resp = requests.get(url, timeout=30)
+        resp = requests.get(url, timeout=30, verify=check_ssl)
 
         if resp.status_code == 200:
             root = ElementTree.fromstring(resp.text)
@@ -174,18 +175,30 @@ def setupVariables():
 
     # Regex to check token
     if re.compile("^[A-Za-z1-9]+$").match(plex_token) is None:
-        input("WARNING: Entered token '" + server_url + "' does not appear to follow the correct format!\n" +
+        input("WARNING: Entered token '" + plex_token + "' does not appear to follow the correct format!\n" +
               "If you believe this is a mistake, press enter to continue... ")
 
         br()
+    
+    # Decide if SSL cert should be enforced
+    print("Would you like to check SSL certificates? If unsure press enter for default")
+    check_ssl = input("Validate SSL certificate? - enabled by default (y / n): ")
+    
+    if (check_ssl == "n" or check_ssl == "N"):
+        check_ssl = False
+        warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+    else:
+        check_ssl = True
 
+    br()
+    
     # Fetch Plex music playlist keys
-    keys = plexPlaylistKeys(server_url, plex_token)
+    keys = plexPlaylistKeys(server_url, plex_token, check_ssl)
 
     br()
 
     print("Fetching sample playlist to determine prepend...")
-    _, playlist = plexPlaylist(server_url, plex_token, keys[0])
+    _, playlist = plexPlaylist(server_url, plex_token, keys[0], check_ssl)
 
     plex_unix = playlist[0].startswith("/")
 
@@ -277,7 +290,7 @@ def setupVariables():
           "Due to Plex API limitations, all music to be added to playlists must be in the same library.")
 
     # Display discovered library sections
-    plexSections(server_url, plex_token)
+    plexSections(server_url, plex_token, check_ssl)
 
     section_id = input("Please enter your music section ID: ")
 
@@ -285,6 +298,10 @@ def setupVariables():
 
     v = {}
     v["server_url"] = server_url
+    if (check_ssl == False):
+        v["check_ssl"] = "False"
+    else:
+        v["check_ssl"] = "True"
     v["plex_token"] = plex_token
     v["local_playlists"] = local_playlists
     v["install_directory"] = install_directory
@@ -482,6 +499,13 @@ elif v['local_convert'] == "u2w":
 else:
     print("Local playlist paths will not be converted")
 
+if v['check_ssl'] == "False":
+    print("SSL certificate will not be validated")
+    warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+    check_ssl=False
+else:
+    print("SSL certificate will be validated")
+    check_ssl=True
 br()
 
 # Create tmp and backup folders if required
@@ -495,11 +519,11 @@ setupFolders()
 backupLocal()
 
 # Get keys for all Plex music playlists
-keys = plexPlaylistKeys(v['server_url'], v['plex_token'])
+keys = plexPlaylistKeys(v['server_url'], v['plex_token'], check_ssl)
 
 # Copies Plex playlists to .tmp/plex/ folder
 for key in keys:
-    title, playlist = plexPlaylist(v['server_url'], v['plex_token'], key)
+    title, playlist = plexPlaylist(v['server_url'], v['plex_token'], key, check_ssl)
 
     # Strip prepend
     playlist = [stripPrepend(track, v['plex_prepend'], False)
@@ -634,10 +658,10 @@ for filename in os.listdir(_plex):
 
     querystring = urllib.parse.urlencode(OrderedDict(
         [("sectionID", v['section_id']), ("path", _plex_path), ("X-Plex-Token", v['plex_token'])]))
-    response = requests.post(url, data="", headers=headers, params=querystring)
+    response = requests.post(url, data="", headers=headers, params=querystring, verify=check_ssl)
 
     # Should return nothing but if there's an issue there may be an error shown
-    #print(response.text)
+    print(response.text)
 
 br()
 
