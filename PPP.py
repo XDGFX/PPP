@@ -181,13 +181,14 @@ def setupVariables():
         br()
     
     # Decide if SSL cert should be enforced
-    check_ssl = input("Validate SSL certificate? - enabled by default (y or n): ")
+    print("Would you like to check SSL certificates? If unsure press enter for default")
+    check_ssl = input("Validate SSL certificate? - enabled by default (y / n): ")
     
     if (check_ssl == "n" or check_ssl == "N"):
-        check_ssl = False;
+        check_ssl = False
         warnings.filterwarnings('ignore', message='Unverified HTTPS request')
     else:
-        check_ssl = True;
+        check_ssl = True
 
     br()
     
@@ -501,10 +502,10 @@ else:
 if v['check_ssl'] == "False":
     print("SSL certificate will not be validated")
     warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-    check_ssl=False;
+    check_ssl=False
 else:
     print("SSL certificate will be validated")
-    check_ssl=True;
+    check_ssl=True
 br()
 
 # Create tmp and backup folders if required
