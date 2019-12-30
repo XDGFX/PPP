@@ -21,7 +21,7 @@ If you want to delete a playlist or song from a playlist, it must be removed fro
 1. Install Python 3.X if you haven't already
 2. Download the latest release of PPP from [here](https://github.com/XDGFX/PPP/releases)
 3. Ensure you have at least 1 playlist in Plex already, so PPP can use it as a template
-4. Run PPP with Python 3 (if running for the first time, a setup will take you through assigning your variables)
+4. Run PPP with Python 3 (if running for the first time, a setup will take you through assigning your variables, or you can rename `variablesExample.json` to `variables.json` and fill in your configuration manually)
 
 ```
 PPP.py [-h] [-setup] [-nobackups] [-retention n]
