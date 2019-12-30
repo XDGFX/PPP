@@ -185,10 +185,10 @@ def setupVariables():
     check_ssl = input("Validate SSL certificate? - enabled by default (y / n): ")
     
     if (check_ssl == "n" or check_ssl == "N"):
-        check_ssl = False
+        check_ssl = "False"
         warnings.filterwarnings('ignore', message='Unverified HTTPS request')
     else:
-        check_ssl = True
+        check_ssl = "True"
 
     br()
     
@@ -298,10 +298,7 @@ def setupVariables():
 
     v = {}
     v["server_url"] = server_url
-    if (check_ssl == False):
-        v["check_ssl"] = "False"
-    else:
-        v["check_ssl"] = "True"
+    v["check_ssl"] = check_ssl
     v["plex_token"] = plex_token
     v["local_playlists"] = local_playlists
     v["install_directory"] = install_directory
