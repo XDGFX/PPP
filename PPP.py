@@ -1,4 +1,4 @@
-# --- PPP (Plex Playlist Pusher) v3.0.0 ---
+# --- PPP (Plex Playlist Pusher) v3.0.2 ---
 # Synchronises playlists between local files (.m3u) and Plex playlists.
 # If there are differences between local and Plex playlists, both will be
 # merged and duplicates deleted; meaning tracks can be added on one and
