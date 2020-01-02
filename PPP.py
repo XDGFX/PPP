@@ -436,7 +436,7 @@ def stripPrepend(path, prepend, invert):
 # --- MAIN ---
 
 # Setup version and get any arguments passed to PPP
-vers = "v3.0.0"
+vers = "v3.0.2"
 args = getArguments()
 
 print("""
