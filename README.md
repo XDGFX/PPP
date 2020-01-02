@@ -20,7 +20,7 @@ If you want to delete a playlist or song from a playlist, it must be removed fro
 ## Usage instructions
 1. Install Python 3 if you haven't already
 2. Download the latest release of PPP from [here](https://github.com/XDGFX/PPP/releases)
-3. For first run, see [Setup](#Setup))
+3. For first run, see [Setup](#Setup)
 4. Run PPP with Python 3
 
 ```

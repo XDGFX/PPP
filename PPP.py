@@ -221,7 +221,7 @@ def setupVariables():
     plex_prepend = os.path.commonpath(playlist)
 
     # Convert paths back for prepend
-    playlist = [convertPath(track, plex_convert, True) for track in playlist]
+    plex_prepend = convertPath(plex_prepend, plex_convert, True)
 
     print("Calculated Plex Prepend: " + plex_prepend)
 
@@ -269,7 +269,7 @@ def setupVariables():
     local_prepend = os.path.commonpath(playlist)
 
     # Convert paths back for prepend
-    playlist = [convertPath(track, local_convert, True) for track in playlist]
+    local_prepend = convertPath(local_prepend, local_convert, True)
 
     print("Calculated local Prepend: " + local_prepend)
 
@@ -497,11 +497,11 @@ else:
     print("Local playlist paths will not be converted")
 
 if v['check_ssl'] == "False":
-    print("SSL certificate will not be validated")
+    print("SSL certificates will not be validated")
     warnings.filterwarnings('ignore', message='Unverified HTTPS request')
     check_ssl=False
 else:
-    print("SSL certificate will be validated")
+    print("SSL certificates will be validated")
     check_ssl=True
 br()
 
@@ -631,13 +631,13 @@ for filename in os.listdir(_merged):
         local_tracks.append(stripPrepend(convertPath(
             track, v['local_convert'], True), v['local_prepend'], True))
 
-    # Writes local_tracks to merged playlist
+    # Writes local tracks back to local tmp
     f = io.open(os.path.join(_local, filename), 'w+', encoding='utf8')
     for line in local_tracks:
         f.write(line + '\n')
     f.close()
 
-    # Writes local_tracks to merged playlist
+    # Writes plex tracks back to plex tmp
     f = io.open(os.path.join(_plex, filename), 'w+', encoding='utf8')
     for line in plex_tracks:
         f.write(line + '\n')
