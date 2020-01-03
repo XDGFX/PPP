@@ -1,4 +1,7 @@
-# --- PPP (Plex Playlist Pusher) v3.0.0 ---
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# --- PPP (Plex Playlist Pusher) v3.0.1 cjn ---
 # Synchronises playlists between local files (.m3u) and Plex playlists.
 # If there are differences between local and Plex playlists, both will be
 # merged and duplicates deleted; meaning tracks can be added on one and
@@ -14,6 +17,7 @@
 # 23/03/19 v2.1.2 Fixed v2.1 and v2.1.1 releases, no longer using tempfile
 # 30/03/19 v2.1.3 Added timestamp and improved character support
 # 20/12/19 v3.0.0 MAJOR REWRITE: Added setup procedure and UNIX / Windows compatibility
+# 03/01/20 v3.0.1 Touches and tweaks by cjnaz
 
 # Uses GNU General Public License
 
@@ -78,10 +82,12 @@ def plexPlaylistKeys(server_url, plex_token, check_ssl):
 
             keys = []
             for document in root.findall("Playlist"):
+                # print (document)
                 if document.get('smart') == "0" and document.get('playlistType') == "audio":
                     keys.append(document.get('key'))
 
             print("Found " + str(len(keys)) + " playlists.")
+            # print (keys)
 
             br()
 
@@ -127,7 +133,8 @@ def setupVariables():
     # Remove variables.json if it already exists
     if os.path.isfile('variables.json'):
         try:
-            shutil.rmtree('variables.json')
+            # shutil.rmtree('variables.json')
+            os.remove('variables.json')
         except Exception as e:
             print(
                 "ERROR: I couldn't remove existing variables.json. Try deleting manually?")
@@ -153,7 +160,7 @@ def setupVariables():
     # SERVER URL
     print("First things first... what is your Plex server URL, as seen by " +
           "PPP? It must include port, in the form '192.198.1.10:32400'")
-    server_url = input("Please enter your server URL: ")
+    server_url = input("Please enter your server URL: ").strip()
 
     if not re.match('(?:http|https)://', server_url):
         server_url = "http://" + server_url
@@ -161,22 +168,26 @@ def setupVariables():
     br()
 
     # Regex to check URL with port
-    if re.compile("^(?:http|https)://[\\d.]+:\\d+$").match(server_url) is None:
+    
+    # if re.compile("^(?:http|https)://[\\d.]+:\\d+$").match(server_url) is None:
+    if re.compile(r"^(?:http|https)://[\d.\w]+:[\d]+$").match(server_url) is None:
         input("WARNING: Entered URL '" + server_url + "' does not appear to follow the correct format!\n" +
-              "If you believe this is a mistake, press enter to continue... ")
+              "If you believe the entered URL is correct, press enter to continue (else ^C and start over)... ")
 
         br()
 
     # PLEX TOKEN
     print("Next we need your Plex Token. You can find this by following these instructions: https://bit.ly/2p7RtOu")
-    plex_token = getpass.getpass("Please enter your Plex Token: ")
+    # plex_token = getpass.getpass("Please enter your Plex Token (input hidden): ")
+    plex_token = input ("Please enter your Plex Token: ").strip()
 
     br()
 
     # Regex to check token
-    if re.compile("^[A-Za-z1-9]+$").match(plex_token) is None:
+    # if re.compile("^[A-Za-z1-9]+$").match(plex_token) is None:
+    if re.compile(r"^[A-Za-z1-9-_]+$").match(plex_token) is None:
         input("WARNING: Entered token '" + plex_token + "' does not appear to follow the correct format!\n" +
-              "If you believe this is a mistake, press enter to continue... ")
+              "If you believe the entered token is correct, press enter to continue (else ^C and start over)... ")
 
         br()
     
@@ -197,13 +208,18 @@ def setupVariables():
 
     br()
 
-    print("Fetching sample playlist to determine prepend...")
-    _, playlist = plexPlaylist(server_url, plex_token, keys[0], check_ssl)
+    if len(keys) > 0:
+        print("Fetching sample playlist to determine prepend...")
+        _, playlist = plexPlaylist(server_url, plex_token, keys[0], check_ssl)
 
-    plex_unix = playlist[0].startswith("/")
+        plex_unix = playlist[0].startswith("/")
 
-    print("It looks like your Plex machine uses %s paths" %
-          ("UNIX" if plex_unix else "Windows"))
+        print("It looks like your Plex machine uses %s paths" %
+            ("UNIX" if plex_unix else "Windows"))
+    else:
+        print("At least 1 playlist must exist in Plex in order to determine the Plex machine type.")
+        print("Create a dummy playlist in Plex containing at least 2 titles from different artists, then rerun this script.")
+        raise SystemExit
 
     # Convert from Windows to UNIX paths
     if plex_unix != ppp_unix:
@@ -240,8 +256,9 @@ def setupVariables():
         for file in files:
             if file.endswith('.m3u'):
                 playlistsFound = True
-                playlist = io.open(
-                    os.path.join(root, file), 'r', encoding='utf8').read().splitlines()
+                # playlist = io.open(
+                #     os.path.join(root, file), 'rt', encoding='utf8').read().splitlines()
+                playlist = readPlaylistFile(os.path.join(root, file))
                 break
 
     if not playlistsFound:
@@ -252,7 +269,7 @@ def setupVariables():
 
     print("It looks like your local playlists use %s paths" %
           ("UNIX" if local_unix else "Windows"))
-
+    
     # Convert paths
     if local_unix != ppp_unix:
 
@@ -265,8 +282,16 @@ def setupVariables():
             local_convert = 'u2w'
 
     playlist = [convertPath(track, local_convert, False) for track in playlist]
+    
 
-    local_prepend = os.path.commonpath(playlist)
+    if local_unix == ppp_unix:  # Same machine type
+        local_prepend = os.path.commonpath(playlist)
+    elif local_unix:            # On Windows, looking at a Unix sytle playlist
+        import posixpath
+        local_prepend = posixpath.commonpath(playlist)
+    else:                       # On Unix, looking at a Windows sytle playlist
+        import ntpath
+        local_prepend = ntpath.commonpath(playlist).replace("/","\\\\")
 
     # Convert paths back for prepend
     playlist = [convertPath(track, local_convert, True) for track in playlist]
@@ -339,7 +364,25 @@ def getArguments():
     parser.add_argument('-retention', metavar='n', type=int, nargs=1, default=10,
                         help='Number of previous local playlist backups to keep (Default 10)')
 
+    parser.add_argument('-nocleanup', action='store_true',
+                        help='Disable removal of .tmp directory (for debug)')
+
     return parser.parse_args()
+
+
+def readPlaylistFile (filename):
+    _playlist = []
+    try:
+        with io.open(filename, "rt", encoding='utf8') as inf:
+            for line in inf:
+                if not line.startswith('#'):
+                    _playlist.append(line.strip())
+    except:
+        with io.open(filename, "rt", encoding='latin1') as inf:
+            for line in inf:
+                if not line.startswith('#'):
+                    _playlist.append(line.strip())
+    return _playlist
 
 
 def backupLocal():
@@ -436,7 +479,7 @@ def stripPrepend(path, prepend, invert):
 # --- MAIN ---
 
 # Setup version and get any arguments passed to PPP
-vers = "v3.0.0"
+vers = "v3.0.1 cjn"
 args = getArguments()
 
 print("""
@@ -463,12 +506,11 @@ print('Running PPP at ' + runtime + '\n')
 
 if not args.setup:
     print("Attempting to load existing variables...\n")
-
-    try:
+    if os.path.exists('variables.json'):
         f = open('variables.json')
         v = json.load(f)
         print("Variables loaded successfully!")
-    except Exception as e:
+    else:
         print("INFO: Couldn't find existing variables... proceeding with initial setup\n")
         v = setupVariables()
 else:
@@ -550,8 +592,9 @@ for root, dirs, files in os.walk(v['local_playlists']):
 
         if file.endswith('.m3u'):
 
-            playlist = io.open(
-                file_path, 'r', encoding='utf8').read().splitlines()
+            # playlist = io.open(
+            #     file_path, 'r', encoding='utf8').read().splitlines()
+            playlist = readPlaylistFile(file_path)
 
             # Strip prepend
             playlist = [stripPrepend(track, v['local_prepend'], False)
@@ -684,9 +727,10 @@ for playlist in os.listdir(_local):
 
 br()
 
-try:
-    shutil.rmtree('.tmp')
-    print('Complete!\n')
-except shutil.Error as e:
-    print("Program complete, but I had trouble cleaning .tmp directory. Check it's not open somewhere else \n ERROR: %s" % e)
-    raise SystemExit
+if not args.nocleanup:
+    try:
+        shutil.rmtree('.tmp')
+        print('Complete!\n')
+    except shutil.Error as e:
+        print("Program complete, but I had trouble cleaning .tmp directory. Check it's not open somewhere else \n ERROR: %s" % e)
+        raise SystemExit

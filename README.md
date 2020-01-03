@@ -24,14 +24,18 @@ If you want to delete a playlist or song from a playlist, it must be removed fro
 4. Run PPP with Python 3
 
 ```
-PPP.py [-h] [-setup] [-nobackups] [-retention n]
+usage: PPP.py [-h] [-setup] [-nobackups] [-retention n] [-nocleanup]
+
+PPP v3.0.1 cjn. Syncs playlists between Plex and a local directory containing
+.m3u playlist files.
 
 optional arguments:
   -h, --help    show this help message and exit
   -setup        Force-run the setup procedure
   -nobackups    Disable backup of local playlists completely!
   -retention n  Number of previous local playlist backups to keep (Default 10)
-  ```
+  -nocleanup    Disable removal of .tmp directory (for debug)
+```
 ---
 
 ## Setup
