@@ -178,7 +178,7 @@ def setupVariables():
     br()
 
     # Regex to check token
-    if re.compile("^[A-Za-z1-9]+$").match(plex_token) is None:
+    if re.compile(r"^[A-Za-z1-9-_]+$").match(plex_token) is None:
         input("WARNING: Entered token '" + plex_token + "' does not appear to follow the correct format!\n" +
               "If you believe the entered token is correct, press enter to continue (else ^C and start over)... ")
 
