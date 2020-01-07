@@ -477,11 +477,14 @@ print('Running PPP at ' + runtime + '\n')
 if not args.setup:
     print("Attempting to load existing variables...\n")
 
-    try:
-        f = open('variables.json')
-        v = json.load(f)
-        print("Variables loaded successfully!")
-    except Exception as e:
+    if os.path.exists('variables.json'):
+        try:
+            f = open('variables.json')
+            v = json.load(f)
+            print("Variables loaded successfully!")
+        except Exception as e:
+            print("Unable to load variables... check PPP has read permissions!")
+    else:
         print("INFO: Couldn't find existing variables... proceeding with initial setup\n")
         v = setupVariables()
 else:
