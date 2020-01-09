@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# --- PPP (Plex Playlist Pusher) v3.0.3 ---
+# --- PPP (Plex Playlist Pusher) ---
 # Synchronises playlists between local files (.m3u) and Plex playlists.
 # If there are differences between local and Plex playlists, both will be
 # merged and duplicates deleted; meaning tracks can be added on one and
@@ -20,8 +20,11 @@
 # 30/12/19 v3.0.1 Added ability to ignore SSL certificates
 # 02/01/20 v3.0.2 Fixed prepend conversion when PPP and playlist machine not same type
 # 07/01/20 v3.0.3 Touches and tweaks by cjnaz
+# 09/01/20 v3.0.4 Fixed custom retention arguments
 
 # Uses GNU General Public License
+
+vers = "v3.0.4"
 
 
 # --- IMPORT MODULES ---
@@ -346,7 +349,7 @@ def getArguments():
     parser.add_argument('-nobackups', action='store_true',
                         help='Disable backup of local playlists completely!')
 
-    parser.add_argument('-retention', metavar='n', type=int, nargs=1, default=10,
+    parser.add_argument('-retention', metavar='n', type=int, nargs=1, default=[10],
                         help='Number of previous local playlist backups to keep (Default 10)')
 
     parser.add_argument('-nocleanup', action='store_true',
@@ -360,9 +363,9 @@ def backupLocal():
         backups = os.listdir('local_backups')
         backup_time = [b.replace('-', '') for b in backups]
 
-        while len(backups) > args.retention:
+        while len(backups) > args.retention[0]:
             print('INFO: Number of backups (%i) exceeds backup retention (%i)' %
-                  (len(backups), args.retention))
+                  (len(backups), args.retention[0]))
             oldest_backup = backup_time.index(min(backup_time))
 
             # Delete oldest backup
@@ -448,8 +451,7 @@ def stripPrepend(path, prepend, invert):
 
 # --- MAIN ---
 
-# Setup version and get any arguments passed to PPP
-vers = "v3.0.3"
+# Get passed arguments
 args = getArguments()
 
 print("""
