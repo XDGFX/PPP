@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="/branding/logo.png" alt="PPP">
-
-  <b>Plex Playlist Pusher (Python Re-write)</b>
-
-  <i>Looking for the original Bash version? Find it <a href="https://github.com/XDGFX/PPP/tree/master">here</a></i>
+<img src="/branding/logo.png" alt="PPP">
 </p>
+
+**Plex Playlist Pusher (Python Re-write)**
+
+*Looking for the original Bash version? Find it [here](https://github.com/XDGFX/PPP/tree/master)*
 
 ---
 
