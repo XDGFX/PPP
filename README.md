@@ -1,9 +1,9 @@
 <p align="center">
-![](branding/logo.png)
+  <img src="/branding/logo.png" alt="PPP">
 
-**Plex Playlist Pusher (Python Re-write)**
+  <b>Plex Playlist Pusher (Python Re-write)</b>
 
-*Looking for the original Bash version? Find it [here](https://github.com/XDGFX/PPP/tree/master)*
+  <i>Looking for the original Bash version? Find it <a href="https://github.com/XDGFX/PPP/tree/master">here</a></i>
 </p>
 
 ---
