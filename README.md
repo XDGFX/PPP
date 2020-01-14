@@ -1,4 +1,6 @@
-# PPP
+![](branding/logo.png)
+---
+
 **Plex Playlist Pusher (Python Re-write)**
 
 *Looking for the original Bash version? Find it [here](https://github.com/XDGFX/PPP/tree/master)*
