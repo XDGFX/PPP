@@ -69,7 +69,8 @@ Running setup should help you find all these variables!
 | `check_ssl` | validate, or ignore SSL certificate ('"False"' for self signed https) | `"True"` |
 | `plex_token` | find it [here](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/) | `"A1B3c4bdHA3s8COTaE3l"` |
 | `local_playlists` | path to the local playlists you want to use, relative to PPP | `"/mnt/Playlists"` |
-| `install_directory` | path to PPP install directory, as seen by Plex (to allow uploading of new playlists) | `"/mnt/PPP"` |
+| `working_directory` | path to PPP working directory, a directory accessible by both PPP and Plex | `"/mnt/PPP"` |
+| `working_directory_plex` | path to PPP working directory as seen by Plex. Change it if Plex is running in a container and cannot see `working_directory` | `"/data/mnt/PPP"` |
 | `section_id` | the library section which contains all your music (only one section is supported by the Plex API) | `"11"` |
 | `local_prepend` | path to be ignored in local playlists | `"Z:\\Media\\Music\\"` |
 | `plex_prepend` | path to be ignored in Plex playlists | `"/mnt/Media/Music"` |
