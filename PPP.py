@@ -26,7 +26,6 @@
 
 vers = "v3.0.4"
 
-
 # --- IMPORT MODULES ---
 
 from datetime import datetime                # for timestamp
@@ -186,11 +185,11 @@ def setupVariables():
               "If you believe the entered token is correct, press enter to continue (else ^C and start over)... ")
 
         br()
-    
+
     # Decide if SSL cert should be enforced
     print("Would you like to check SSL certificates? If unsure press enter for default")
     check_ssl = input("Validate SSL certificate? - enabled by default (y / n): ")
-    
+
     if (check_ssl == "n" or check_ssl == "N"):
         check_ssl = "False"
         warnings.filterwarnings('ignore', message='Unverified HTTPS request')
@@ -198,7 +197,7 @@ def setupVariables():
         check_ssl = "True"
 
     br()
-    
+
     # Fetch Plex music playlist keys
     keys = plexPlaylistKeys(server_url, plex_token, check_ssl)
 
@@ -288,12 +287,17 @@ def setupVariables():
 
     br()
 
-    # INSTALL DIRECTORY
-    print("Now we need your PPP install directory, as seen by Plex. \n" +
-          "This is so Plex can access temporary playlists that will be saved " +
-          "in this directory.")
-    install_directory = input(
-        "Please enter your PPP install directory, relative to Plex: ")
+    # WORKING DIRECTORY
+    print("Now we need your PPP working directory. \n" +
+          "It needs to be accessible by both PPP and Plex. If Plex is running in a container, you can specify another "
+          "path afterwards.")
+    working_directory = input(
+        "Please enter your PPP working directory: ")
+
+    working_directory_plex = input(
+        "Please enter your PPP working directory, as seen by Plex (required only if different from previous one): ")
+    if working_directory_plex.strip() == '':
+        working_directory_plex = working_directory
 
     br()
 
@@ -314,7 +318,8 @@ def setupVariables():
     v["check_ssl"] = check_ssl
     v["plex_token"] = plex_token
     v["local_playlists"] = local_playlists
-    v["install_directory"] = install_directory
+    v["working_directory"] = working_directory
+    v["working_directory_plex"] = working_directory_plex
     v["section_id"] = section_id
     v["local_prepend"] = local_prepend
     v["plex_prepend"] = plex_prepend
@@ -403,9 +408,9 @@ def backupLocal():
 def setupFolders():
 
     # Remove existing temporary directory
-    if os.path.isdir('.tmp'):
+    if os.path.isdir(_tmp):
         try:
-            shutil.rmtree('.tmp')
+            shutil.rmtree(_tmp)
         except Exception as e:
             print("ERROR: I couldn't remove existing .tmp folder. Try deleting manually?")
             print(e)
@@ -414,7 +419,7 @@ def setupFolders():
     # Folder operations
     try:
         print('Attempting to make .tmp folders')
-        os.makedirs('.tmp')
+        os.makedirs(_tmp)
         os.makedirs(_plex)
         os.makedirs(_local)
         os.makedirs(_merged)
@@ -524,9 +529,10 @@ else:
 br()
 
 # Create tmp and backup folders if required
-_local = os.path.join('.tmp', 'local')
-_plex = os.path.join('.tmp', 'plex')
-_merged = os.path.join('.tmp', 'merged')
+_tmp = os.path.join(v["working_directory"], '.tmp')
+_local = os.path.join(_tmp, 'local')
+_plex = os.path.join(_tmp, 'plex')
+_merged = os.path.join(_tmp, 'merged')
 
 setupFolders()
 
@@ -669,7 +675,7 @@ for filename in os.listdir(_plex):
     print('Sending updated playlist to Plex: ' + filename)
 
     _plex_path = convertPath(os.path.join(
-        v['install_directory'], _plex, filename), v['plex_convert'], True)
+        v['working_directory_plex'], '.tmp', 'plex', filename), v['plex_convert'], True)
 
     querystring = urllib.parse.urlencode(OrderedDict(
         [("sectionID", v['section_id']), ("path", _plex_path), ("X-Plex-Token", v['plex_token'])]))
@@ -705,7 +711,7 @@ br()
 
 if not args.nocleanup:
     try:
-        shutil.rmtree('.tmp')
+        shutil.rmtree(_tmp)
         print('Complete!\n')
     except shutil.Error as e:
         print("Program complete, but I had trouble cleaning .tmp directory. Check it's not open somewhere else \n ERROR: %s" % e)
