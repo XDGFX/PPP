@@ -8,7 +8,7 @@
 # updated on both... but must be deleted on BOTH to remove completely
 # (the same goes for new playlists).
 
-# XDGFX 2019
+# XDGFX 2020
 
 # 17/03/19 Started working on script
 # 19/03/19 Original v2.0 Release (where v1.0 was bash version)
@@ -21,25 +21,26 @@
 # 02/01/20 v3.0.2 Fixed prepend conversion when PPP and playlist machine not same type
 # 07/01/20 v3.0.3 Touches and tweaks by cjnaz
 # 09/01/20 v3.0.4 Fixed custom retention arguments
+# 17/04/20 v3.0.5 Improved support for Plex running in containers by gotson
 
 # Uses GNU General Public License
 
-vers = "v3.0.4"
+# for hiding SSL warnings when cert checking is disabled
+import warnings
+import json                                  # for saving of variables
+import re                                    # for verifying input variables
+import urllib                                # for Plex POST
+from xml.etree import ElementTree            # for xml
+import argparse                              # for arguments
+import shutil                                # for deleting files
+import os                                    # for folder and file management
+import io                                    # character encoding
+from collections import OrderedDict          # url ordering
+import requests                              # HTTP POST requests
+from datetime import datetime                # for timestamp
+vers = "v3.0.5"
 
 # --- IMPORT MODULES ---
-
-from datetime import datetime                # for timestamp
-import requests                              # HTTP POST requests
-from collections import OrderedDict          # url ordering
-import io                                    # character encoding
-import os                                    # for folder and file management
-import shutil                                # for deleting files
-import argparse                              # for arguments
-from xml.etree import ElementTree            # for xml
-import urllib                                # for Plex POST
-import re                                    # for verifying input variables
-import json                                  # for saving of variables
-import warnings                              # for hiding SSL warnings when cert checking is disabled
 
 
 # --- FUNCTIONS ---
@@ -188,7 +189,8 @@ def setupVariables():
 
     # Decide if SSL cert should be enforced
     print("Would you like to check SSL certificates? If unsure press enter for default")
-    check_ssl = input("Validate SSL certificate? - enabled by default (y / n): ")
+    check_ssl = input(
+        "Validate SSL certificate? - enabled by default (y / n): ")
 
     if (check_ssl == "n" or check_ssl == "N"):
         check_ssl = "False"
@@ -210,7 +212,7 @@ def setupVariables():
         plex_unix = playlist[0].startswith("/")
 
         print("It looks like your Plex machine uses %s paths" %
-            ("UNIX" if plex_unix else "Windows"))
+              ("UNIX" if plex_unix else "Windows"))
 
     else:
         print("At least one playlist must exist in Plex in order to determine the Plex machine type.")
@@ -288,7 +290,7 @@ def setupVariables():
     br()
 
     # WORKING DIRECTORY
-    print("Now we need your PPP working directory. \n" +
+    print("Now we need your PPP working directory, relative to PPP.py. \n" +
           "It needs to be accessible by both PPP and Plex. If Plex is running in a container, you can specify another "
           "path afterwards.")
     working_directory = input(
@@ -468,7 +470,7 @@ print("""
 #                    | |    | |    | |                            #
 #                    |_|    |_|    |_|  """ + vers + """                    #
 #                                                                 #
-#              --- PPP Copyright (C) 2019 XDGFX ---               #
+#              --- PPP Copyright (C) 2020 XDGFX ---               #
 #                                                                 #
 #  This program comes with ABSOLUTELY NO WARRANTY.                #
 #  This is free software, and you are welcome to redistribute it  #
@@ -522,10 +524,10 @@ else:
 if v['check_ssl'] == "False":
     print("SSL certificates will not be validated")
     warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-    check_ssl=False
+    check_ssl = False
 else:
     print("SSL certificates will be validated")
-    check_ssl=True
+    check_ssl = True
 br()
 
 # Create tmp and backup folders if required
@@ -544,7 +546,8 @@ keys = plexPlaylistKeys(v['server_url'], v['plex_token'], check_ssl)
 
 # Copies Plex playlists to .tmp/plex/ folder
 for key in keys:
-    title, playlist = plexPlaylist(v['server_url'], v['plex_token'], key, check_ssl)
+    title, playlist = plexPlaylist(
+        v['server_url'], v['plex_token'], key, check_ssl)
 
     # Strip prepend
     playlist = [stripPrepend(track, v['plex_prepend'], False)
@@ -679,7 +682,8 @@ for filename in os.listdir(_plex):
 
     querystring = urllib.parse.urlencode(OrderedDict(
         [("sectionID", v['section_id']), ("path", _plex_path), ("X-Plex-Token", v['plex_token'])]))
-    response = requests.post(url, data="", headers=headers, params=querystring, verify=check_ssl)
+    response = requests.post(
+        url, data="", headers=headers, params=querystring, verify=check_ssl)
 
     # Should return nothing but if there's an issue there may be an error shown
     if not response.text == '':
