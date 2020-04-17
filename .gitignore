@@ -4,3 +4,6 @@
 !LICENSE
 !README.md
 !example-variables.json
+!branding
+!branding/*.png
+!branding/*.ai

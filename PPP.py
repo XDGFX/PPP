@@ -8,7 +8,7 @@
 # updated on both... but must be deleted on BOTH to remove completely
 # (the same goes for new playlists).
 
-# XDGFX 2019
+# XDGFX 2020
 
 # 17/03/19 Started working on script
 # 19/03/19 Original v2.0 Release (where v1.0 was bash version)
@@ -21,26 +21,26 @@
 # 02/01/20 v3.0.2 Fixed prepend conversion when PPP and playlist machine not same type
 # 07/01/20 v3.0.3 Touches and tweaks by cjnaz
 # 09/01/20 v3.0.4 Fixed custom retention arguments
+# 17/04/20 v3.0.5 Improved support for Plex running in containers by gotson
 
 # Uses GNU General Public License
 
-vers = "v3.0.4"
-
+# for hiding SSL warnings when cert checking is disabled
+import warnings
+import json                                  # for saving of variables
+import re                                    # for verifying input variables
+import urllib                                # for Plex POST
+from xml.etree import ElementTree            # for xml
+import argparse                              # for arguments
+import shutil                                # for deleting files
+import os                                    # for folder and file management
+import io                                    # character encoding
+from collections import OrderedDict          # url ordering
+import requests                              # HTTP POST requests
+from datetime import datetime                # for timestamp
+vers = "v3.0.5"
 
 # --- IMPORT MODULES ---
-
-from datetime import datetime                # for timestamp
-import requests                              # HTTP POST requests
-from collections import OrderedDict          # url ordering
-import io                                    # character encoding
-import os                                    # for folder and file management
-import shutil                                # for deleting files
-import argparse                              # for arguments
-from xml.etree import ElementTree            # for xml
-import urllib                                # for Plex POST
-import re                                    # for verifying input variables
-import json                                  # for saving of variables
-import warnings                              # for hiding SSL warnings when cert checking is disabled
 
 
 # --- FUNCTIONS ---
@@ -186,11 +186,12 @@ def setupVariables():
               "If you believe the entered token is correct, press enter to continue (else ^C and start over)... ")
 
         br()
-    
+
     # Decide if SSL cert should be enforced
     print("Would you like to check SSL certificates? If unsure press enter for default")
-    check_ssl = input("Validate SSL certificate? - enabled by default (y / n): ")
-    
+    check_ssl = input(
+        "Validate SSL certificate? - enabled by default (y / n): ")
+
     if (check_ssl == "n" or check_ssl == "N"):
         check_ssl = "False"
         warnings.filterwarnings('ignore', message='Unverified HTTPS request')
@@ -198,7 +199,7 @@ def setupVariables():
         check_ssl = "True"
 
     br()
-    
+
     # Fetch Plex music playlist keys
     keys = plexPlaylistKeys(server_url, plex_token, check_ssl)
 
@@ -211,7 +212,7 @@ def setupVariables():
         plex_unix = playlist[0].startswith("/")
 
         print("It looks like your Plex machine uses %s paths" %
-            ("UNIX" if plex_unix else "Windows"))
+              ("UNIX" if plex_unix else "Windows"))
 
     else:
         print("At least one playlist must exist in Plex in order to determine the Plex machine type.")
@@ -288,12 +289,17 @@ def setupVariables():
 
     br()
 
-    # INSTALL DIRECTORY
-    print("Now we need your PPP install directory, as seen by Plex. \n" +
-          "This is so Plex can access temporary playlists that will be saved " +
-          "in this directory.")
-    install_directory = input(
-        "Please enter your PPP install directory, relative to Plex: ")
+    # WORKING DIRECTORY
+    print("Now we need your PPP working directory, relative to PPP.py. \n" +
+          "It needs to be accessible by both PPP and Plex. If Plex is running in a container, you can specify another "
+          "path afterwards.")
+    working_directory = input(
+        "Please enter your PPP working directory: ")
+
+    working_directory_plex = input(
+        "Please enter your PPP working directory, as seen by Plex (required only if different from previous one): ")
+    if working_directory_plex.strip() == '':
+        working_directory_plex = working_directory
 
     br()
 
@@ -314,7 +320,8 @@ def setupVariables():
     v["check_ssl"] = check_ssl
     v["plex_token"] = plex_token
     v["local_playlists"] = local_playlists
-    v["install_directory"] = install_directory
+    v["working_directory"] = working_directory
+    v["working_directory_plex"] = working_directory_plex
     v["section_id"] = section_id
     v["local_prepend"] = local_prepend
     v["plex_prepend"] = plex_prepend
@@ -403,9 +410,9 @@ def backupLocal():
 def setupFolders():
 
     # Remove existing temporary directory
-    if os.path.isdir('.tmp'):
+    if os.path.isdir(_tmp):
         try:
-            shutil.rmtree('.tmp')
+            shutil.rmtree(_tmp)
         except Exception as e:
             print("ERROR: I couldn't remove existing .tmp folder. Try deleting manually?")
             print(e)
@@ -414,7 +421,7 @@ def setupFolders():
     # Folder operations
     try:
         print('Attempting to make .tmp folders')
-        os.makedirs('.tmp')
+        os.makedirs(_tmp)
         os.makedirs(_plex)
         os.makedirs(_local)
         os.makedirs(_merged)
@@ -463,7 +470,7 @@ print("""
 #                    | |    | |    | |                            #
 #                    |_|    |_|    |_|  """ + vers + """                    #
 #                                                                 #
-#              --- PPP Copyright (C) 2019 XDGFX ---               #
+#              --- PPP Copyright (C) 2020 XDGFX ---               #
 #                                                                 #
 #  This program comes with ABSOLUTELY NO WARRANTY.                #
 #  This is free software, and you are welcome to redistribute it  #
@@ -517,16 +524,17 @@ else:
 if v['check_ssl'] == "False":
     print("SSL certificates will not be validated")
     warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-    check_ssl=False
+    check_ssl = False
 else:
     print("SSL certificates will be validated")
-    check_ssl=True
+    check_ssl = True
 br()
 
 # Create tmp and backup folders if required
-_local = os.path.join('.tmp', 'local')
-_plex = os.path.join('.tmp', 'plex')
-_merged = os.path.join('.tmp', 'merged')
+_tmp = os.path.join(v["working_directory"], '.tmp')
+_local = os.path.join(_tmp, 'local')
+_plex = os.path.join(_tmp, 'plex')
+_merged = os.path.join(_tmp, 'merged')
 
 setupFolders()
 
@@ -538,7 +546,8 @@ keys = plexPlaylistKeys(v['server_url'], v['plex_token'], check_ssl)
 
 # Copies Plex playlists to .tmp/plex/ folder
 for key in keys:
-    title, playlist = plexPlaylist(v['server_url'], v['plex_token'], key, check_ssl)
+    title, playlist = plexPlaylist(
+        v['server_url'], v['plex_token'], key, check_ssl)
 
     # Strip prepend
     playlist = [stripPrepend(track, v['plex_prepend'], False)
@@ -669,11 +678,12 @@ for filename in os.listdir(_plex):
     print('Sending updated playlist to Plex: ' + filename)
 
     _plex_path = convertPath(os.path.join(
-        v['install_directory'], _plex, filename), v['plex_convert'], True)
+        v['working_directory_plex'], '.tmp', 'plex', filename), v['plex_convert'], True)
 
     querystring = urllib.parse.urlencode(OrderedDict(
         [("sectionID", v['section_id']), ("path", _plex_path), ("X-Plex-Token", v['plex_token'])]))
-    response = requests.post(url, data="", headers=headers, params=querystring, verify=check_ssl)
+    response = requests.post(
+        url, data="", headers=headers, params=querystring, verify=check_ssl)
 
     # Should return nothing but if there's an issue there may be an error shown
     if not response.text == '':
@@ -705,7 +715,7 @@ br()
 
 if not args.nocleanup:
     try:
-        shutil.rmtree('.tmp')
+        shutil.rmtree(_tmp)
         print('Complete!\n')
     except shutil.Error as e:
         print("Program complete, but I had trouble cleaning .tmp directory. Check it's not open somewhere else \n ERROR: %s" % e)
