@@ -49,85 +49,60 @@ def br():
     print("\n------\n")
 
 
-def plexSections(server_url, plex_token, check_ssl):
+def plexGetRequest(url, plex_token, check_ssl):
+    print("URL: " + url.replace(plex_token, "***********"))
     try:
-        print("Requesting section info from Plex...")
-        url = server_url + "/library/sections/all?X-Plex-Token=" + plex_token
-        print("URL: " + url.replace(plex_token, "***********"))
         resp = requests.get(url, timeout=30, verify=check_ssl)
-
-        if resp.status_code == 200:
-            print("Requesting of section info was successful.")
-
+        if resp.ok:
+            print("Request was successful.")
             br()
-
-            root = ElementTree.fromstring(resp.text)
-            print("ID: SECTION")
-
-            for document in root.findall("Directory"):
-                if document.get('type') == "artist":
-                    print(document.get('key') + ': ' +
-                          document.get('title').strip())
-
+            return ElementTree.fromstring(resp.text)
     except Exception:
-        print("ERROR: Issue encountered when attempting to list detailed sections info.")
+        print("ERROR: Issue encountered with request.")
         raise SystemExit
+
+    print("ERROR: Request failed.")
+    print('ERROR: Return code: %d Reason: %s' % (resp.status_code, resp.reason))
+    raise SystemExit
+
+
+def plexSections(server_url, plex_token, check_ssl):
+    print("Requesting section info from Plex...")
+    url = server_url + "/library/sections/all?X-Plex-Token=" + plex_token
+    root = plexGetRequest(url, plex_token, check_ssl)
+    br()
+    print("ID: SECTION")
+    for document in root.findall("Directory"):
+        if document.get('type') == "artist":
+            print(document.get('key') + ': ' +
+                  document.get('title').strip())
 
 
 def plexPlaylistKeys(server_url, plex_token, check_ssl):
-    try:
-        print("Requesting playlists from Plex...")
-        url = server_url + "/playlists/?X-Plex-Token=" + plex_token
-        print("URL: " + url.replace(plex_token, "***********"))
-        resp = requests.get(url, timeout=30, verify=check_ssl)
-
-        if resp.status_code == 200:
-            print("Requesting of playlists was successful.")
-            root = ElementTree.fromstring(resp.text)
-
-            keys = []
-            for document in root.findall("Playlist"):
-                if document.get('smart') == "0" and document.get('playlistType') == "audio":
-                    keys.append(document.get('key'))
-
-            print("Found " + str(len(keys)) + " playlists.")
-
-            br()
-
-            return keys
-
-    except Exception as e:
-        print("ERROR: Issue encountered when attempting to list detailed sections info.")
-        print('ERROR: %s' % e)
-        raise SystemExit
+    print("Requesting playlists from Plex...")
+    url = server_url + "/playlists/?X-Plex-Token=" + plex_token
+    root = plexGetRequest(url, plex_token, check_ssl)
+    keys = []
+    for document in root.findall("Playlist"):
+        if document.get('smart') == "0" and document.get('playlistType') == "audio":
+            keys.append(document.get('key'))
+    print("Found " + str(len(keys)) + " playlists.")
+    br()
+    return keys
 
 
 def plexPlaylist(server_url, plex_token, key, check_ssl):
-    try:
-        print("Requesting playlist data from Plex...")
-        url = server_url + key + "?X-Plex-Token=" + plex_token
-        print("URL: " + url.replace(plex_token, "***********"))
-        resp = requests.get(url, timeout=30, verify=check_ssl)
+    print("Requesting playlist data from Plex...")
+    url = server_url + key + "?X-Plex-Token=" + plex_token
+    root = plexGetRequest(url, plex_token, check_ssl)
+    title = root.get("title")
+    print("Found playlist: " + title)
+    playlist = []
+    for document in root.findall("Track"):
+        playlist.append(document[0][0].get('file'))
 
-        if resp.status_code == 200:
-            root = ElementTree.fromstring(resp.text)
-
-            title = root.get("title")
-
-            print("Found playlist: " + title)
-
-            playlist = []
-            for document in root.findall("Track"):
-                playlist.append(document[0][0].get('file'))
-
-            print("Found " + str(len(playlist)) + " songs.")
-
-            return title, playlist
-
-    except Exception as e:
-        print("ERROR: Issue encountered when attempting to get Plex playlist.")
-        print('ERROR: %s' % e)
-        raise SystemExit
+    print("Found " + str(len(playlist)) + " songs.")
+    return title, playlist
 
 
 def setupVariables():
@@ -205,19 +180,22 @@ def setupVariables():
 
     br()
 
-    if len(keys) > 0:
-        print("Fetching sample playlist to determine prepend...")
-        _, playlist = plexPlaylist(server_url, plex_token, keys[0], check_ssl)
-
-        plex_unix = playlist[0].startswith("/")
-
-        print("It looks like your Plex machine uses %s paths" %
-              ("UNIX" if plex_unix else "Windows"))
-
-    else:
+    if len(keys) == 0:
         print("At least one playlist must exist in Plex in order to determine the Plex machine type.")
         print("Create a dummy playlist in Plex containing at least two titles from different artists, then rerun this script.")
         raise SystemExit
+
+    print("Fetching sample playlist(s) to determine prepend...")
+    _, playlist = plexPlaylist(server_url, plex_token, keys[0], check_ssl)
+    plex_unix = playlist[0].startswith("/")
+
+    print("It looks like your Plex machine uses %s paths" %
+          ("UNIX" if plex_unix else "Windows"))
+
+    # If we have more than one playlist add the second to get better deta for the prefix
+    if len(keys) > 1:
+        _, playlist_extra = plexPlaylist(server_url, plex_token, keys[1], check_ssl)
+        playlist = playlist + playlist_extra
 
     # Convert from Windows to UNIX paths
     if plex_unix != ppp_unix:
@@ -330,7 +308,7 @@ def setupVariables():
 
     try:
         with open('variables.json', 'w') as f:
-            json.dump(v, f)
+            json.dump(v, f, indent=2)
     except Exception:
         print(Exception)
         raise SystemExit
@@ -428,7 +406,7 @@ def setupFolders():
         print('Successfully created .tmp folders')
 
     except Exception as e:
-        print('OH NO: Couldn\'t make tmp directories... check your permissions or make sure you don\'t have them open elsewhere')
+        print("OH NO: Couldn't make tmp directories... check your permissions or make sure you don't have them open elsewhere")
         print('ERROR: %s' % e)
         raise SystemExit
 
@@ -487,12 +465,16 @@ if not args.setup:
     print("Attempting to load existing variables...\n")
 
     if os.path.exists('variables.json'):
+        if not os.access('variables.json', os.R_OK):
+            print("ERROR: Unable to load variables... variables.json file not readable.")
+            raise SystemExit
         try:
             f = open('variables.json')
             v = json.load(f)
             print("Variables loaded successfully!")
         except Exception as e:
-            print("Unable to load variables... check PPP has read permissions!")
+            print("ERROR: Unable to load variables... check file contains valid json!")
+            raise SystemExit
     else:
         print("INFO: Couldn't find existing variables... proceeding with initial setup\n")
         v = setupVariables()
@@ -674,6 +656,7 @@ for filename in os.listdir(_merged):
 url = v['server_url'] + '/playlists/upload?'
 headers = {'cache-control': "no-cache"}
 
+failed = 0
 for filename in os.listdir(_plex):
     print('Sending updated playlist to Plex: ' + filename)
 
@@ -682,12 +665,13 @@ for filename in os.listdir(_plex):
 
     querystring = urllib.parse.urlencode(OrderedDict(
         [("sectionID", v['section_id']), ("path", _plex_path), ("X-Plex-Token", v['plex_token'])]))
-    response = requests.post(
+    resp = requests.post(
         url, data="", headers=headers, params=querystring, verify=check_ssl)
 
-    # Should return nothing but if there's an issue there may be an error shown
-    if not response.text == '':
-        print(response.text)
+    # If the post failed then print the return code and the reason for failing.
+    if not resp.ok:
+        print('ERROR: Return code: %d Reason: %s' % (resp.status_code, resp.reason))
+        failed += 1
 
 br()
 
@@ -704,7 +688,7 @@ for root, _, files in os.walk(v['local_playlists']):
                 os.remove(local_path)
             else:
                 print(
-                    "FAIL: A playlist from v['local_playlists'] was there earlier and now it isn\'t. I am very confused.")
+                    "FAIL: A playlist from v['local_playlists'] was there earlier and now it isn't. I am very confused.")
                 raise SystemExit
 
 # Copy remaining, new playlists to the root directory
@@ -712,6 +696,9 @@ for playlist in os.listdir(_local):
     shutil.copy2(os.path.join(_local, playlist), v['local_playlists'])
 
 br()
+
+if failed:
+    print('\nERROR: %d playlists failed to update to plex' % failed)
 
 if not args.nocleanup:
     try:
