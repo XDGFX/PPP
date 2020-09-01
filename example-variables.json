@@ -1,4 +1,4 @@
-
+{
     "server_url": "http://192.168.1.100:32400",
     "check_ssl": "True",
     "plex_token": "A1B3c4bdHA3s8COTaE3l",
