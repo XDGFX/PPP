@@ -426,7 +426,7 @@ def setupFolders():
 def convertPath(path, convert, invert):
     if convert == False:
         return path
-    elif convert == ('w2u' and not invert) or ('u2w' and invert):
+    elif (convert == 'w2u' and not invert) or (convert == 'u2w' and invert):
         return path.replace("/", "\\")
     else:
         return path.replace("\\", "/")
