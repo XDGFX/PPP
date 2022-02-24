@@ -61,7 +61,7 @@ Use task scheduler? I haven't tested it.
 
 ### Docker 
 1. Edit the host paths for the volumes in `docker-compose.yaml`.
-2. Run setup using `docker-compose run -e FIRST_RUN=True --rm ppp`. Use the container-side paths in docker-compose when required.
+2. Run setup using `docker-compose run -e SETUP=True --rm ppp`. Use the container-side paths in docker-compose when required.
 3. Start the service: `docker-compose up -d`
 
 ---
