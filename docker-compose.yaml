@@ -1,0 +1,14 @@
+version: '3'
+
+services: 
+  ppp:
+    build: .
+    environment: 
+      - TIMER=900 # how long to wait between runs of PPP, in seconds  
+    volumes:
+      # change host paths to match your system
+      - "/host/path/to/playlists:/playlists" 
+      - "/host/path/to/area/both/ppp/and/plex/can/access:/shared"
+      - "/host/path/to/somehere:/config"
+    restart: unless-stopped
+
