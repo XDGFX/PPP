@@ -109,11 +109,11 @@ def plexPlaylist(server_url, plex_token, key, check_ssl):
     return title, playlist
 
 
-def setupVariables():
+def setupVariables(variables_file):
     # Remove variables.json if it already exists
-    if os.path.isfile('variables.json'):
+    if os.path.isfile(variables_file):
         try:
-            os.remove('variables.json')
+            os.remove(variables_file)
         except Exception as e:
             print(
                 "ERROR: I couldn't remove existing variables.json. Try deleting manually?")
@@ -312,7 +312,7 @@ def setupVariables():
     v["plex_convert"] = plex_convert
 
     try:
-        with open('variables.json', 'w') as f:
+        with open(variables_file, 'w') as f:
             json.dump(v, f, indent=2)
     except Exception:
         print(Exception)
@@ -348,7 +348,7 @@ def getArguments():
     return parser.parse_args()
 
 
-def backupLocal():
+def backupLocal(args, runtime, v):
     if not args.nobackups:
         backups = os.listdir('local_backups')
         backup_time = [b.replace('-', '') for b in backups]
@@ -390,7 +390,7 @@ def backupLocal():
     br()
 
 
-def setupFolders():
+def setupFolders(args, _tmp, _plex, _local, _merged):
 
     # Remove existing temporary directory
     if os.path.isdir(_tmp):
@@ -440,276 +440,279 @@ def stripPrepend(path, prepend, invert):
 
 
 # --- MAIN ---
-
-# Get passed arguments
-args = getArguments()
-
-print("""
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-#                     _____  _____  _____                         #
-#                    |  __ \\|  __ \\|  __ \\                        #
-#                    | |__) | |__) | |__) |                       #
-#                    |  ___/|  ___/|  ___/                        #
-#                    | |    | |    | |                            #
-#                    |_|    |_|    |_|  """ + vers + """                    #
-#                                                                 #
-#              --- PPP Copyright (C) 2020 XDGFX ---               #
-#                                                                 #
-#  This program comes with ABSOLUTELY NO WARRANTY.                #
-#  This is free software, and you are welcome to redistribute it  #
-#  under certain conditions                                       #
-#                                                                 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-\n""")
-
-runtime = str(datetime.now().replace(microsecond=0)
-              ).replace(' ', '-').replace(':', '-')
-print('Running PPP at ' + runtime + '\n')
-
-if not args.setup:
-    print("Attempting to load existing variables...\n")
-
-    if os.path.exists('variables.json'):
-        if not os.access('variables.json', os.R_OK):
-            print("ERROR: Unable to load variables... variables.json file not readable.")
-            raise SystemExit
-        try:
-            f = open('variables.json')
-            v = json.load(f)
-            print("Variables loaded successfully!")
-        except Exception as e:
-            print("ERROR: Unable to load variables... check file contains valid json!")
-            raise SystemExit
-    else:
-        print("INFO: Couldn't find existing variables... proceeding with initial setup\n")
-        v = setupVariables()
-else:
-    print("Forcing setup sequence...")
-    v = setupVariables()
-
-br()
-
-print("I'll ignore " + v['local_prepend'] + " from local playlists and " +
-      v['plex_prepend'] + " from Plex playlists\n")
-
-# Check if Plex playlists need to be converted
-if v['plex_convert'] == "w2u":
-    print("Plex playlists will be converted from Windows to Unix directories")
-elif v['plex_convert'] == "u2w":
-    print("Plex playlists will be converted from Unix to Windows directories")
-else:
-    print("Plex playlist paths will not be converted")
-
-# Check if local playlists need to be converted
-if v['local_convert'] == "w2u":
-    print("Local playlists will be converted from Windows to Unix directories")
-elif v['local_convert'] == "u2w":
-    print("Local playlists will be converted from Unix to Windows directories")
-else:
-    print("Local playlist paths will not be converted")
-
-if v['check_ssl'] == "False":
-    print("SSL certificates will not be validated")
-    warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-    check_ssl = False
-else:
-    print("SSL certificates will be validated")
-    check_ssl = True
-br()
-
-# Create tmp and backup folders if required
-_tmp = os.path.join(v["working_directory"], '.tmp')
-_local = os.path.join(_tmp, 'local')
-_plex = os.path.join(_tmp, 'plex')
-_merged = os.path.join(_tmp, 'merged')
-
-setupFolders()
-
-# Run backups of local playlists
-backupLocal()
-
-# Get keys for all Plex music playlists
-keys = plexPlaylistKeys(v['server_url'], v['plex_token'], check_ssl)
-
-# Copies Plex playlists to .tmp/plex/ folder
-for key in keys:
-    title, playlist = plexPlaylist(
-        v['server_url'], v['plex_token'], key, check_ssl)
-
-    # Strip prepend
-    playlist = [stripPrepend(track, v['plex_prepend'], False)
-                for track in playlist]
-
-    # Convert to PPP path style
-    playlist = [convertPath(track, v['plex_convert'], False)
-                for track in playlist]
-
-    print('Saving Plex playlist: ' + title)
-
-    # Get each track and save to file
-    f = io.open(os.path.join(_plex, title + '.m3u'),
-                'w+', encoding='utf8')
-    for track in playlist:
-        f.write(track + '\n')
-    f.close()
-
-    print('Save successful!')
-
-    br()
-
-# Copies local playlists to .tmp/local/ folder
-for root, dirs, files in os.walk(v['local_playlists']):
-    for file in files:
-        file_path = os.path.join(root, file)
-
-        if file.endswith('.m3u'):
-
-            playlist = io.open(
-                file_path, 'r', encoding='utf8').read().splitlines()
-
-            # Strip prepend
-            playlist = [stripPrepend(track, v['local_prepend'], False)
-                        for track in playlist]
-
-            # Convert to PPP path style
-            playlist = [convertPath(track, v['local_convert'], False)
-                        for track in playlist]
-
-            print(('Copying local playlist: ' + file_path))
-
-            # Get each track and save to file
-            f = io.open(os.path.join(_local, file),
-                        'w+', encoding='utf8')
-            for track in playlist:
-                f.write(track + '\n')
-            f.close()
-
-br()
-
-# Checks for unique playlists to .tmp/plex/, and moves them to .tmp/merged/
-for filename in os.listdir(_plex):
-    if not os.path.isfile(os.path.join(_local, filename)):
-        print(('Found new Plex playlist: ' + filename))
-
-        os.rename(os.path.join(_plex, filename),
-                  os.path.join(_merged, filename))
-
-        br()
-
-# Checks for unique playlists to .tmp/local/, and copies them to .tmp/merged/
-for filename in os.listdir(_local):
-    if not os.path.isfile(os.path.join(_plex, filename)):
-        print(('Found new local playlist: ' + filename))
-
-        os.rename(os.path.join(_local, filename),
-                  os.path.join(_merged, filename))
-
-        br()
-
-# Merges playlists from tmp/local/ and tmp/plex/ and puts the output in tmp/merged
-for filename in os.listdir(_local):
-
-    print(('Merging: ' + filename))
-
-    local_tracks = io.open(os.path.join(
-        _local, filename), 'r', encoding='utf8').read().splitlines()
-
-    plex_tracks = io.open(os.path.join(
-        _plex, filename), 'r', encoding='utf8').read().splitlines()
-
-    f = io.open(os.path.join(_merged, filename), 'w+', encoding='utf8')
-
-    for line in local_tracks:  # Writes local_tracks to merged playlist
-        if not line.startswith('#'):  # Skips m3u tags beginning with #
-            f.write(line + '\n')
-        if line in plex_tracks:  # Remove duplicates
-            plex_tracks.remove(line)
-
-    for line in plex_tracks:  # Writes plex_tracks to merged playlist
-        f.write(line + '\n')
-    f.close()
-
-br()
-
-# Copy merged playlists back into tmp/plex/ and tmp/local/ with prepends re-added
-for filename in os.listdir(_merged):
-    new_tracks = io.open(os.path.join(_merged, filename),
-                         'r+', encoding='utf8').read().splitlines()
-    plex_tracks = []
-    local_tracks = []
-
-    for track in new_tracks:  # Re-adds prepends and writes to files
-        plex_tracks.append(stripPrepend(convertPath(
-            track, v['plex_convert'], True), v['plex_prepend'], True))
-
-        local_tracks.append(stripPrepend(convertPath(
-            track, v['local_convert'], True), v['local_prepend'], True))
-
-    # Writes local tracks back to local tmp
-    f = io.open(os.path.join(_local, filename), 'w+', encoding='utf8')
-    for line in local_tracks:
-        f.write(line + '\n')
-    f.close()
-
-    # Writes plex tracks back to plex tmp
-    f = io.open(os.path.join(_plex, filename), 'w+', encoding='utf8')
-    for line in plex_tracks:
-        f.write(line + '\n')
-    f.close()
-
-# POST new playlists to Plex
-url = v['server_url'] + '/playlists/upload?'
-headers = {'cache-control': "no-cache"}
-
-failed = 0
-for filename in os.listdir(_plex):
-    print('Sending updated playlist to Plex: ' + filename)
-
-    _plex_path = convertPath(os.path.join(
-        v['working_directory_plex'], '.tmp', 'plex', filename), v['plex_convert'], True)
-
-    querystring = urllib.parse.urlencode(OrderedDict(
-        [("sectionID", v['section_id']), ("path", _plex_path), ("X-Plex-Token", v['plex_token'])]))
-    resp = requests.post(
-        url, data="", headers=headers, params=querystring, verify=check_ssl)
-
-    # If the post failed then print the return code and the reason for failing.
-    if not resp.ok:
-        print('ERROR: Return code: %d Reason: %s' %
-              (resp.status_code, resp.reason))
-        failed += 1
-
-br()
-
-# Copy updated local playlists back to v['local_playlists']
-for root, _, files in os.walk(v['local_playlists']):
-    for playlist in files:
-        if playlist.endswith('.m3u'):
-            print('Copying updated playlist to local playlists: ' + playlist)
-            target_path = os.path.join(root, playlist)
-            local_path = os.path.join(_local, playlist)
-
-            if os.path.isfile(local_path):
-                shutil.copy2(local_path, target_path)
-                os.remove(local_path)
-            else:
-                print(
-                    "FAIL: A playlist from v['local_playlists'] was there earlier and now it isn't. I am very confused.")
+def main(variables_file='variables.json'):
+    # Get passed arguments
+    args = getArguments()
+    
+    print("""
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    #                     _____  _____  _____                         #
+    #                    |  __ \\|  __ \\|  __ \\                        #
+    #                    | |__) | |__) | |__) |                       #
+    #                    |  ___/|  ___/|  ___/                        #
+    #                    | |    | |    | |                            #
+    #                    |_|    |_|    |_|  """ + vers + """                    #
+    #                                                                 #
+    #              --- PPP Copyright (C) 2020 XDGFX ---               #
+    #                                                                 #
+    #  This program comes with ABSOLUTELY NO WARRANTY.                #
+    #  This is free software, and you are welcome to redistribute it  #
+    #  under certain conditions                                       #
+    #                                                                 #
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+    \n""")
+    
+    runtime = str(datetime.now().replace(microsecond=0)
+                ).replace(' ', '-').replace(':', '-')
+    print('Running PPP at ' + runtime + '\n')
+    
+    if not args.setup:
+        print("Attempting to load existing variables...\n")
+    
+        if os.path.exists(variables_file):
+            if not os.access(variables_file, os.R_OK):
+                print("ERROR: Unable to load variables... variables.json file not readable.")
                 raise SystemExit
+            try:
+                f = open(variables_file)
+                v = json.load(f)
+                print("Variables loaded successfully!")
+            except Exception as e:
+                print("ERROR: Unable to load variables... check file contains valid json!")
+                raise SystemExit
+        else:
+            print("INFO: Couldn't find existing variables... proceeding with initial setup\n")
+            v = setupVariables(variables_file)
+    else:
+        print("Forcing setup sequence...")
+        v = setupVariables(variables_file)
+    
+    br()
+    
+    print("I'll ignore " + v['local_prepend'] + " from local playlists and " +
+        v['plex_prepend'] + " from Plex playlists\n")
+    
+    # Check if Plex playlists need to be converted
+    if v['plex_convert'] == "w2u":
+        print("Plex playlists will be converted from Windows to Unix directories")
+    elif v['plex_convert'] == "u2w":
+        print("Plex playlists will be converted from Unix to Windows directories")
+    else:
+        print("Plex playlist paths will not be converted")
+    
+    # Check if local playlists need to be converted
+    if v['local_convert'] == "w2u":
+        print("Local playlists will be converted from Windows to Unix directories")
+    elif v['local_convert'] == "u2w":
+        print("Local playlists will be converted from Unix to Windows directories")
+    else:
+        print("Local playlist paths will not be converted")
+    
+    if v['check_ssl'] == "False":
+        print("SSL certificates will not be validated")
+        warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+        check_ssl = False
+    else:
+        print("SSL certificates will be validated")
+        check_ssl = True
+    br()
+    
+    # Create tmp and backup folders if required
+    _tmp = os.path.join(v["working_directory"], '.tmp')
+    _local = os.path.join(_tmp, 'local')
+    _plex = os.path.join(_tmp, 'plex')
+    _merged = os.path.join(_tmp, 'merged')
+    
+    setupFolders(args, _tmp, _plex, _local, _merged)
+    
+    # Run backups of local playlists
+    backupLocal(args, runtime, v)
+    
+    # Get keys for all Plex music playlists
+    keys = plexPlaylistKeys(v['server_url'], v['plex_token'], check_ssl)
+    
+    # Copies Plex playlists to .tmp/plex/ folder
+    for key in keys:
+        title, playlist = plexPlaylist(
+            v['server_url'], v['plex_token'], key, check_ssl)
+    
+        # Strip prepend
+        playlist = [stripPrepend(track, v['plex_prepend'], False)
+                    for track in playlist]
+    
+        # Convert to PPP path style
+        playlist = [convertPath(track, v['plex_convert'], False)
+                    for track in playlist]
+    
+        print('Saving Plex playlist: ' + title)
+    
+        # Get each track and save to file
+        f = io.open(os.path.join(_plex, title + '.m3u'),
+                    'w+', encoding='utf8')
+        for track in playlist:
+            f.write(track + '\n')
+        f.close()
+    
+        print('Save successful!')
+    
+        br()
+    
+    # Copies local playlists to .tmp/local/ folder
+    for root, dirs, files in os.walk(v['local_playlists']):
+        for file in files:
+            file_path = os.path.join(root, file)
+    
+            if file.endswith('.m3u'):
+    
+                playlist = io.open(
+                    file_path, 'r', encoding='utf8').read().splitlines()
+    
+                # Strip prepend
+                playlist = [stripPrepend(track, v['local_prepend'], False)
+                            for track in playlist]
+    
+                # Convert to PPP path style
+                playlist = [convertPath(track, v['local_convert'], False)
+                            for track in playlist]
+    
+                print(('Copying local playlist: ' + file_path))
+    
+                # Get each track and save to file
+                f = io.open(os.path.join(_local, file),
+                            'w+', encoding='utf8')
+                for track in playlist:
+                    f.write(track + '\n')
+                f.close()
+    
+    br()
+    
+    # Checks for unique playlists to .tmp/plex/, and moves them to .tmp/merged/
+    for filename in os.listdir(_plex):
+        if not os.path.isfile(os.path.join(_local, filename)):
+            print(('Found new Plex playlist: ' + filename))
+    
+            os.rename(os.path.join(_plex, filename),
+                    os.path.join(_merged, filename))
+    
+            br()
+    
+    # Checks for unique playlists to .tmp/local/, and copies them to .tmp/merged/
+    for filename in os.listdir(_local):
+        if not os.path.isfile(os.path.join(_plex, filename)):
+            print(('Found new local playlist: ' + filename))
+    
+            os.rename(os.path.join(_local, filename),
+                    os.path.join(_merged, filename))
+    
+            br()
+    
+    # Merges playlists from tmp/local/ and tmp/plex/ and puts the output in tmp/merged
+    for filename in os.listdir(_local):
+    
+        print(('Merging: ' + filename))
+    
+        local_tracks = io.open(os.path.join(
+            _local, filename), 'r', encoding='utf8').read().splitlines()
+    
+        plex_tracks = io.open(os.path.join(
+            _plex, filename), 'r', encoding='utf8').read().splitlines()
+    
+        f = io.open(os.path.join(_merged, filename), 'w+', encoding='utf8')
+    
+        for line in local_tracks:  # Writes local_tracks to merged playlist
+            if not line.startswith('#'):  # Skips m3u tags beginning with #
+                f.write(line + '\n')
+            if line in plex_tracks:  # Remove duplicates
+                plex_tracks.remove(line)
+    
+        for line in plex_tracks:  # Writes plex_tracks to merged playlist
+            f.write(line + '\n')
+        f.close()
+    
+    br()
+    
+    # Copy merged playlists back into tmp/plex/ and tmp/local/ with prepends re-added
+    for filename in os.listdir(_merged):
+        new_tracks = io.open(os.path.join(_merged, filename),
+                            'r+', encoding='utf8').read().splitlines()
+        plex_tracks = []
+        local_tracks = []
+    
+        for track in new_tracks:  # Re-adds prepends and writes to files
+            plex_tracks.append(stripPrepend(convertPath(
+                track, v['plex_convert'], True), v['plex_prepend'], True))
+    
+            local_tracks.append(stripPrepend(convertPath(
+                track, v['local_convert'], True), v['local_prepend'], True))
+    
+        # Writes local tracks back to local tmp
+        f = io.open(os.path.join(_local, filename), 'w+', encoding='utf8')
+        for line in local_tracks:
+            f.write(line + '\n')
+        f.close()
+    
+        # Writes plex tracks back to plex tmp
+        f = io.open(os.path.join(_plex, filename), 'w+', encoding='utf8')
+        for line in plex_tracks:
+            f.write(line + '\n')
+        f.close()
+    
+    # POST new playlists to Plex
+    url = v['server_url'] + '/playlists/upload?'
+    headers = {'cache-control': "no-cache"}
+    
+    failed = 0
+    for filename in os.listdir(_plex):
+        print('Sending updated playlist to Plex: ' + filename)
+    
+        _plex_path = convertPath(os.path.join(
+            v['working_directory_plex'], '.tmp', 'plex', filename), v['plex_convert'], True)
+    
+        querystring = urllib.parse.urlencode(OrderedDict(
+            [("sectionID", v['section_id']), ("path", _plex_path), ("X-Plex-Token", v['plex_token'])]))
+        resp = requests.post(
+            url, data="", headers=headers, params=querystring, verify=check_ssl)
+    
+        # If the post failed then print the return code and the reason for failing.
+        if not resp.ok:
+            print('ERROR: Return code: %d Reason: %s' %
+                (resp.status_code, resp.reason))
+            failed += 1
+    
+    br()
+    
+    # Copy updated local playlists back to v['local_playlists']
+    for root, _, files in os.walk(v['local_playlists']):
+        for playlist in files:
+            if playlist.endswith('.m3u'):
+                print('Copying updated playlist to local playlists: ' + playlist)
+                target_path = os.path.join(root, playlist)
+                local_path = os.path.join(_local, playlist)
+    
+                if os.path.isfile(local_path):
+                    shutil.copy2(local_path, target_path)
+                    os.remove(local_path)
+                else:
+                    print(
+                        "FAIL: A playlist from v['local_playlists'] was there earlier and now it isn't. I am very confused.")
+                    raise SystemExit
+    
+    # Copy remaining, new playlists to the root directory
+    for playlist in os.listdir(_local):
+        shutil.copy2(os.path.join(_local, playlist), v['local_playlists'])
+    
+    br()
+    
+    if failed:
+        print('\nERROR: %d playlists failed to update to plex' % failed)
+    
+    if not args.nocleanup:
+        try:
+            shutil.rmtree(_tmp)
+            print('Complete!\n')
+        except shutil.Error as e:
+            print("Program complete, but I had trouble cleaning .tmp directory. Check it's not open somewhere else \n ERROR: %s" % e)
+            raise SystemExit
 
-# Copy remaining, new playlists to the root directory
-for playlist in os.listdir(_local):
-    shutil.copy2(os.path.join(_local, playlist), v['local_playlists'])
-
-br()
-
-if failed:
-    print('\nERROR: %d playlists failed to update to plex' % failed)
-
-if not args.nocleanup:
-    try:
-        shutil.rmtree(_tmp)
-        print('Complete!\n')
-    except shutil.Error as e:
-        print("Program complete, but I had trouble cleaning .tmp directory. Check it's not open somewhere else \n ERROR: %s" % e)
-        raise SystemExit
+if __name__ == "__main__": 
+    main() 
